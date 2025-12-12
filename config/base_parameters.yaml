@@ -1,0 +1,66 @@
+# =============================================================================
+# BASE PARAMETERS - AgCl VOF Droplet Simulation
+# =============================================================================
+# Ce fichier définit les valeurs par défaut de tous les paramètres.
+# Les études paramétriques surchargent ces valeurs.
+
+# -----------------------------------------------------------------------------
+# RHÉOLOGIE - Modèle Carreau
+# -----------------------------------------------------------------------------
+rheology:
+  eta0: 1.5           # [Pa.s] Viscosité cisaillement nul
+  eta_inf: 0.001      # [Pa.s] Viscosité cisaillement infini
+  lambda: 0.1         # [s] Temps de relaxation
+  n: 0.5              # [-] Exposant loi puissance
+
+# -----------------------------------------------------------------------------
+# TENSION DE SURFACE
+# -----------------------------------------------------------------------------
+surface:
+  sigma: 0.040        # [N/m] Tension de surface encre/air
+
+# -----------------------------------------------------------------------------
+# ANGLES DE CONTACT (en degrés)
+# -----------------------------------------------------------------------------
+contact_angles:
+  substrate: 35                 # Substrat principal (hydrophile)
+  wall_isolant_left: 15         # Isolant gauche (très hydrophile)
+  wall_isolant_right: 160       # Isolant droit (hydrophobe)
+  wall_buse_left_int: 90        # Buse gauche intérieur (neutre)
+  wall_buse_right_int: 90       # Buse droite intérieur (neutre)
+  wall_buse_left_ext: 180       # Buse gauche extérieur (super-hydrophobe)
+  wall_buse_right_ext: 180      # Buse droite extérieur (super-hydrophobe)
+
+# -----------------------------------------------------------------------------
+# PROPRIÉTÉS PHYSIQUES
+# -----------------------------------------------------------------------------
+physical:
+  rho_ink: 3000       # [kg/m³] Densité encre AgCl
+  rho_air: 1.0        # [kg/m³] Densité air
+  nu_air: 1.48e-5     # [m²/s] Viscosité cinématique air
+
+# -----------------------------------------------------------------------------
+# PROCESSUS
+# -----------------------------------------------------------------------------
+process:
+  dispense_time: 0.050    # [s] Durée de dispense
+  end_time: 0.400         # [s] Temps final simulation
+  inlet_velocity: 0.1     # [m/s] Vitesse entrée (si applicable)
+
+# -----------------------------------------------------------------------------
+# GÉOMÉTRIE
+# -----------------------------------------------------------------------------
+geometry:
+  nozzle_diameter: 0.0005     # [m] Diamètre buse
+  nozzle_height: 0.0003       # [m] Hauteur buse
+  domain_width: 0.002         # [m] Largeur domaine
+  domain_height: 0.001        # [m] Hauteur domaine
+
+# -----------------------------------------------------------------------------
+# PARAMÈTRES NUMÉRIQUES
+# -----------------------------------------------------------------------------
+numerical:
+  maxCo: 0.3              # Courant max
+  maxAlphaCo: 0.3         # Courant max pour alpha
+  maxDeltaT: 1e-5         # [s] Pas de temps max
+  writeInterval: 0.001    # [s] Intervalle d'écriture

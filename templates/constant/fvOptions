@@ -1,0 +1,44 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// MOMENTUM SOURCE to overcome spurious currents
+// From benchmark analysis: Ca_spurious >> Ca_physical
+// Using semiImplicitSource for OpenFOAM v13
+// Force/volume = rho * a = 3000 * 400 = 1200000 N/m³ (doubled for stronger flow)
+
+pistonForce
+{
+    type            semiImplicitSource;
+
+    selectionMode   cellZone;
+    cellZone        buse;
+
+    volumeMode      specific;  // per unit volume
+
+    sources
+    {
+        U
+        {
+            // Explicit: force per unit volume (N/m³) = rho * a
+            // Implicit: damping coefficient (1/s)
+            explicit    (0 -1200000 0);
+            implicit    0;
+        }
+    }
+}
+
+// ************************************************************************* //

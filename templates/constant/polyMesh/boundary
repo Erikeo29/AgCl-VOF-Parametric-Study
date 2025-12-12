@@ -1,0 +1,122 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+15
+(
+    front
+    {
+        type            empty;
+        inGroups        List<word> 1(empty);
+        nFaces          17600;
+        startFace       34712;
+    }
+    back
+    {
+        type            empty;
+        inGroups        List<word> 1(empty);
+        nFaces          17600;
+        startFace       52312;
+    }
+    substrate
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          160;
+        startFace       69912;
+    }
+    wall_isolant_left
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          26;
+        startFace       70072;
+    }
+    wall_isolant_right
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          26;
+        startFace       70098;
+    }
+    top_isolant_left
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          80;
+        startFace       70124;
+    }
+    top_isolant_right
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          80;
+        startFace       70204;
+    }
+    wall_buse_left_int
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          88;
+        startFace       70284;
+    }
+    wall_buse_left_ext
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          24;
+        startFace       70372;
+    }
+    wall_buse_right_int
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          88;
+        startFace       70396;
+    }
+    wall_buse_right_ext
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          24;
+        startFace       70484;
+    }
+    inlet
+    {
+        type            patch;
+        nFaces          60;
+        startFace       70508;
+    }
+    atmosphere
+    {
+        type            patch;
+        nFaces          260;
+        startFace       70568;
+    }
+    outlet_left
+    {
+        type            patch;
+        nFaces          30;
+        startFace       70828;
+    }
+    outlet_right
+    {
+        type            patch;
+        nFaces          30;
+        startFace       70858;
+    }
+)
+
+// ************************************************************************* //

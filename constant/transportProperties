@@ -1,0 +1,43 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (water air);
+
+water
+{
+    transportModel  Carreau;
+    rho             3000;          // kg/m³
+    mu              0.5;           // Pa·s (η₀ = 0.5 Pa.s - SIM62+)
+
+    Carreau
+    {
+        nu0         1.667e-4;      // m²/s (η₀/ρ = 0.5/3000) - REDUCED 3x
+        nuInf       5.56e-5;       // m²/s (η∞/ρ = 0.167/3000)
+        lambda      0.15;          // s (relaxation time)
+        n           0.7;           // power law index
+    }
+}
+
+air
+{
+    transportModel  Newtonian;
+    rho             1.2;           // kg/m³ (from PARAMETERS_AgCl.md)
+    mu              1e-5;          // Pa·s (from PARAMETERS_AgCl.md)
+}
+
+sigma           0.04;              // N/m (surface tension = 40 mN/m, from PARAMETERS_AgCl.md)
+
+// ************************************************************************* //

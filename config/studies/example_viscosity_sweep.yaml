@@ -1,0 +1,51 @@
+# =============================================================================
+# ÉTUDE PARAMÉTRIQUE: Effet de la viscosité
+# =============================================================================
+name: viscosity_sweep
+description: Effet de la viscosité η₀ sur l'étalement de la goutte
+
+# Fichier de base (valeurs par défaut)
+base: ../base_parameters.yaml
+
+# -----------------------------------------------------------------------------
+# DÉFINITION DU SWEEP
+# -----------------------------------------------------------------------------
+sweep:
+  # Paramètre à varier (notation pointée: section.parametre)
+  parameter: rheology.eta0
+  
+  # Option 1: Liste de valeurs explicites
+  values: [0.5, 1.0, 1.5, 2.0, 3.0]
+  
+  # Option 2: Range (décommenter si préféré)
+  # range:
+  #   min: 0.5
+  #   max: 3.0
+  #   steps: 5
+  #   scale: linear  # ou 'log'
+
+# -----------------------------------------------------------------------------
+# SORTIES À EXTRAIRE
+# -----------------------------------------------------------------------------
+outputs:
+  - spreading_diameter    # Diamètre d'étalement vs temps
+  - contact_angle_left    # Angle de contact gauche vs temps
+  - contact_angle_right   # Angle de contact droit vs temps
+  - spreading_velocity    # Vitesse d'étalement
+  - final_shape           # Forme finale (capture à t_end)
+
+# -----------------------------------------------------------------------------
+# OPTIONS D'EXÉCUTION
+# -----------------------------------------------------------------------------
+execution:
+  parallel: false         # Exécuter en parallèle (si ressources dispo)
+  max_parallel: 2         # Nombre max de simulations parallèles
+  timeout: 3600           # Timeout par simulation [s]
+  
+# -----------------------------------------------------------------------------
+# POST-TRAITEMENT AUTOMATIQUE
+# -----------------------------------------------------------------------------
+postprocessing:
+  generate_animations: true
+  comparison_plots: true
+  export_csv: true

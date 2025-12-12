@@ -1,0 +1,128 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// GÉOMÉTRIE 2D COMPLÈTE (sans symétrie)
+// Pour permettre des angles de contact différents gauche/droite
+// Inlet à y=0.558mm, injection vers le bas (-y)
+// Vitesse: 6.83 mm/s pendant 80ms puis stop
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    // === Faces 2D (empty) ===
+    front
+    {
+        type            empty;
+    }
+
+    back
+    {
+        type            empty;
+    }
+
+    // === Substrat (no-slip wall) ===
+    substrate
+    {
+        type            noSlip;
+    }
+
+    // === Paroi verticale de l'isolant GAUCHE (no-slip) ===
+    wall_isolant_left
+    {
+        type            noSlip;
+    }
+
+    // === Paroi verticale de l'isolant DROITE (no-slip) ===
+    wall_isolant_right
+    {
+        type            noSlip;
+    }
+
+    // === Surface horizontale de l'isolant GAUCHE (no-slip) ===
+    top_isolant_left
+    {
+        type            noSlip;
+    }
+
+    // === Surface horizontale de l'isolant DROITE (no-slip) ===
+    top_isolant_right
+    {
+        type            noSlip;
+    }
+
+    // === Paroi INTERIEURE de la buse GAUCHE (no-slip) ===
+    wall_buse_left_int
+    {
+        type            noSlip;
+    }
+
+    // === Paroi EXTERIEURE de la buse GAUCHE (no-slip) ===
+    wall_buse_left_ext
+    {
+        type            noSlip;
+    }
+
+    // === Paroi INTERIEURE de la buse DROITE (no-slip) ===
+    wall_buse_right_int
+    {
+        type            noSlip;
+    }
+
+    // === Paroi EXTERIEURE de la buse DROITE (no-slip) ===
+    wall_buse_right_ext
+    {
+        type            noSlip;
+    }
+
+    // === Inlet (haut de la buse, injection encre vers le bas) ===
+    inlet
+    {
+        type            uniformFixedValue;
+        uniformValue    table
+        (
+            (0.000    (0 -0.00683 0))   // 6.83 mm/s vers le bas
+            (0.080    (0 -0.00683 0))   // fin dispense à 80 ms
+            (0.0801   (0 0 0))          // arrêt brutal
+            (0.300    (0 0 0))          // reste à 0 jusqu'à 300ms
+        );
+    }
+
+    // === Atmosphere (top, pression outlet) ===
+    atmosphere
+    {
+        type            pressureInletOutletVelocity;
+        value           uniform (0 0 0);
+    }
+
+    // === Outlet GAUCHE (x=-0.8) ===
+    outlet_left
+    {
+        type            pressureInletOutletVelocity;
+        value           uniform (0 0 0);
+    }
+
+    // === Outlet DROITE (x=0.8) ===
+    outlet_right
+    {
+        type            pressureInletOutletVelocity;
+        value           uniform (0 0 0);
+    }
+}
+
+// ************************************************************************* //

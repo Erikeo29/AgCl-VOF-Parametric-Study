@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      alpha.water;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    front
+    {
+        type            empty;
+    }
+    back
+    {
+        type            empty;
+    }
+    substrate
+    {
+        type            contactAngle;
+        theta0          45;     // Contact angle = 35 degrees (hydrophilic)
+        limit           gradient;
+        value           uniform 0;
+    }
+    ink_air_interface
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+    inlet_air
+    {
+        type            fixedValue;
+        value           uniform 0;  // AIR enters from inlet (pushes ink down)
+    }
+    outlet_left
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+    outlet_right
+    {
+        type            inletOutlet;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+    wall_ink_left
+    {
+        type            zeroGradient;
+    }
+    wall_ink_right
+    {
+        type            zeroGradient;
+    }
+}
+
+
+// ************************************************************************* //

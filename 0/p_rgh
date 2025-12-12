@@ -1,0 +1,120 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      p_rgh;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// GÉOMÉTRIE 2D COMPLÈTE (sans symétrie)
+// Pour permettre des angles de contact différents gauche/droite
+
+dimensions      [1 -1 -2 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    // === Faces 2D (empty) ===
+    front
+    {
+        type            empty;
+    }
+
+    back
+    {
+        type            empty;
+    }
+
+    // === Substrat (wall - flux fixe) ===
+    substrate
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Paroi verticale de l'isolant GAUCHE ===
+    wall_isolant_left
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Paroi verticale de l'isolant DROITE ===
+    wall_isolant_right
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Surface horizontale de l'isolant GAUCHE ===
+    top_isolant_left
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Surface horizontale de l'isolant DROITE ===
+    top_isolant_right
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Paroi INTERIEURE de la buse GAUCHE ===
+    wall_buse_left_int
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Paroi EXTERIEURE de la buse GAUCHE ===
+    wall_buse_left_ext
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Paroi INTERIEURE de la buse DROITE ===
+    wall_buse_right_int
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Paroi EXTERIEURE de la buse DROITE ===
+    wall_buse_right_ext
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Inlet (pression ajustée pour le flux) ===
+    inlet
+    {
+        type            fixedFluxPressure;
+    }
+
+    // === Atmosphere (pression atmosphérique = référence) ===
+    atmosphere
+    {
+        type            totalPressure;
+        p0              uniform 0;
+        value           uniform 0;
+    }
+
+    // === Outlet latéral GAUCHE (pression fixe) ===
+    outlet_left
+    {
+        type            fixedValue;
+        value           uniform 0;
+    }
+
+    // === Outlet latéral DROITE (pression fixe) ===
+    outlet_right
+    {
+        type            fixedValue;
+        value           uniform 0;
+    }
+}
+
+// ************************************************************************* //
