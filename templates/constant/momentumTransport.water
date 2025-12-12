@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      momentumTransport.water;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Non-Newtonian ink (water) phase with Carreau rheology
+// SIM62: Viscosité réduite (η₀ = 0.5 Pa·s au lieu de 1.5 Pa·s)
+// Parameters:
+//   η₀ = 0.5 Pa·s (zero-shear viscosity) - REDUCED 3x
+//   η∞ = 0.167 Pa·s (infinite-shear viscosity) - proportionally reduced
+//   λ = 0.15 s (relaxation time)
+//   n = 0.7 (power-law index, <1 means shear-thinning)
+
+simulationType  laminar;
+
+laminar
+{
+    model           generalisedNewtonian;
+    viscosityModel  BirdCarreau;
+
+    // Zero-shear viscosity: nu0 = η₀ / ρ = 0.5 / 3000 = 1.667e-4 m²/s
+    nu0             1.667e-4;
+
+    // Infinite-shear viscosity: nuInf = η∞ / ρ = 0.167 / 3000 = 5.56e-5 m²/s
+    nuInf           5.56e-5;
+
+    // Time constant: k = λ = 0.15 s (relaxation time)
+    k               0.15;
+
+    // Power-law index: n = 0.7 (shear-thinning behavior, n < 1)
+    n               0.7;
+}
+
+// ************************************************************************* //

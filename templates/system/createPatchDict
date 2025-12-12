@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      createPatchDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Convert wedge patches from type 'patch' to type 'wedge'
+// Required for axisymmetric VOF simulation
+
+pointSync false;
+
+patches
+(
+    {
+        name wedge_front;
+        patchInfo
+        {
+            type wedge;
+        }
+        constructFrom patches;
+        patches (wedge_front);
+    }
+
+    {
+        name wedge_back;
+        patchInfo
+        {
+            type wedge;
+        }
+        constructFrom patches;
+        patches (wedge_back);
+    }
+);
+
+// ************************************************************************* //

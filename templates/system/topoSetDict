@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      topoSetDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// SIM45: COMSOL geometry with reduced ink volume
+// Puit: 0.8 mm x 0.128 mm
+// Buse: 0.25 mm x 0.19 mm (ratio 46%)
+//
+// Ink nozzle region: X ∈ [0.275, 0.525] mm, Y ∈ [0.128, 0.318] mm
+// In meters: X ∈ [0.000275, 0.000525], Y ∈ [0.000128, 0.000318]
+
+actions
+(
+    // Create cellSet for ink nozzle region (Block 3 from blockMeshDict)
+    {
+        name    inkRegionSet;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        box     (0.000275 0.000128 -1) (0.000525 0.000318 1);
+        // X: 0.275-0.525 mm (nozzle width = 0.25 mm, centered on x=0.4)
+        // Y: 0.128-0.318 mm (nozzle height = 0.19 mm)
+        // Z: full range
+    }
+
+    // Convert cellSet to cellZone for fvOptions
+    {
+        name    inkRegion;
+        type    cellZoneSet;
+        action  new;
+        source  setToCellZone;
+        set     inkRegionSet;
+    }
+);
+
+// ************************************************************************* //

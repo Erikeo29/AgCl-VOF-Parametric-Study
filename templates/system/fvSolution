@@ -1,0 +1,107 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "alpha.water.*"
+    {
+        nAlphaCorr      3;
+        nAlphaSubCycles 2;          // INCREASED from 1 → 2 (robustness for spurious currents)
+
+        // === MULES CONFIGURATION (FIXED for OF13) ===
+        // Root cause fix: nLimitedIter → nLimiterIter
+        // Using iterative MULES for robustness (3 limiter iterations)
+        MULESCorr       no;         // Explicit MULES (for Co < 0.5)
+        nLimiterIter    3;          // FIXED: was nLimitedIter (TYPO)
+                                    // 3 limiter iterations = robust bounding
+        
+        // OF13 CRITICAL FEATURES for spurious current suppression:
+        globalBounds    yes;        // Strict bounding in [0,1] (OF13 feature)
+        limiterTolerance 1e-8;      // Tight tolerance for limiter convergence
+
+        interfaceCompression on;
+
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-09;
+        relTol          0;
+    }
+
+    "pcorr.*"
+    {
+        solver          PCG;
+        preconditioner  diagonal;  // Use simple diagonal (robust, no DIC singularity)
+        tolerance       1e-05;
+        relTol          0;
+    }
+
+    // Pressure solver: PCG with diagonal preconditioning (robust for multiphase)
+    p_rgh
+    {
+        solver          PCG;
+        preconditioner  diagonal;
+        tolerance       1e-08;
+        relTol          0.01;
+    }
+
+    p_rghFinal
+    {
+        $p_rgh;
+        relTol          0;
+    }
+
+    U
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-06;
+        relTol          0;
+    }
+}
+
+PIMPLE
+{
+    momentumPredictor   no;
+    nOuterCorrectors    1;         // VOF best practice: 1 outer correction
+    nCorrectors         3;
+    nNonOrthogonalCorrectors 0;
+
+    maxCo               0.2;       // REDUCED from 0.3 → 0.2 (mitigation spurious currents)
+    maxAlphaCo          0.2;       // REDUCED from 0.3 → 0.2 (stricter interface control)
+
+    rDeltaTSmoothingCoeff 0.05;
+    rDeltaTDampingCoeff   1;
+    nAlphaSpreadIter      0;
+    nAlphaSweepIter       0;
+
+    pRefCell            0;
+    pRefValue           0;
+}
+
+relaxationFactors
+{
+    equations
+    {
+        ".*"            1;
+    }
+    fields
+    {
+        p_rgh           0.3;        // REDUCED from 0.4 → 0.3 (stronger stabilization)
+        alpha.water     0.5;        // REDUCED from 0.7 → 0.5 (prevent overshooting)
+    }
+}
+
+// ************************************************************************* //

@@ -1,0 +1,108 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \    /   O peration     | Website:  https://openfoam.org
+    \  /    A nd           | Version:  13
+     \/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// For compressibleInterFoam: Define properties for both liquid and vapor phases
+
+phases (water air);
+
+// ========== WATER (LIQUID) ==========
+water
+{
+    thermoType
+    {
+        type            heRhoThermo;
+        mixture         pureMixture;
+        transport       Carreau;
+        thermo          eConst;
+        equationOfState perfectGas;
+        specie          specie;
+    }
+
+    mixture
+    {
+        specie
+        {
+            molWeight       18.015;  // Water molecular weight (kg/kmol)
+        }
+
+        thermodynamics
+        {
+            Cv              4200;    // Specific heat capacity (J/kg/K) - simplified for liquid
+            Hf              0;       // Heat of formation
+        }
+
+        transport
+        {
+            transportModel  Carreau;
+            nu0             5e-4;    // m²/s (η₀/ρ = 1.5/3000)
+            nuInf           1.67e-4; // m²/s (η∞/ρ = 0.5/3000)
+            lambda          0.15;    // s (relaxation time)
+            n               0.7;     // power law index
+        }
+
+        equationOfState
+        {
+            R               461;     // Specific gas constant (J/kg/K)
+        }
+    }
+}
+
+// ========== AIR (GAS) ==========
+air
+{
+    thermoType
+    {
+        type            heRhoThermo;
+        mixture         pureMixture;
+        transport       Sutherland;
+        thermo          eConst;
+        equationOfState perfectGas;
+        specie          specie;
+    }
+
+    mixture
+    {
+        specie
+        {
+            molWeight       28.9;  // Air molecular weight (kg/kmol)
+        }
+
+        thermodynamics
+        {
+            Cv              719;   // Specific heat capacity (J/kg/K) - simplified for air
+            Hf              0;     // Heat of formation
+        }
+
+        transport
+        {
+            transportModel  Sutherland;
+            mu              1e-5;     // Pa·s (reference viscosity)
+            Ts              110.4;    // Sutherland temperature (K)
+            Cs              1.4e-6;   // Sutherland constant
+        }
+
+        equationOfState
+        {
+            R               287;   // Specific gas constant (J/kg/K)
+        }
+    }
+}
+
+// ========== INTERFACIAL PROPERTIES ==========
+sigma           0.04;  // Surface tension (N/m)
+
+// ========== END OF THERMOPHYSICAL PROPERTIES ==========
+

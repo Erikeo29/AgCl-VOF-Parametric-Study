@@ -1,0 +1,53 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Source: PARAMETERS_AgCl.md → Simulation Parameters
+// v5: New geometry v3 (clean), refined mesh (40k cells), gravity enabled
+
+application     interFoam;
+
+startFrom       startTime;
+startTime       0;
+
+stopAt          endTime;
+
+// SIM49: 400ms total - dispense 30ms + spreading 370ms
+endTime  0.3;
+
+deltaT          1e-06;          // Reduced 10x for VOF stability at very low inlet velocity
+
+writeControl    adjustableRunTime;
+writeInterval   0.005;  // Write every 5 milliseconds
+
+purgeWrite      0;
+
+writeFormat     ascii;  // ASCII for easy inspection
+writePrecision  6;
+writeCompression off;
+
+timeFormat      general;
+timePrecision   6;
+
+runTimeModifiable yes;
+
+// Courant constraint for VOF stability (PARAMETERS_AgCl.md criterion: Co < 0.3)
+adjustTimeStep  yes;
+
+maxCo           0.3;
+maxAlphaCo      0.3;
+maxDeltaT       1e-3;
+
+// ************************************************************************* //
