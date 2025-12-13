@@ -63,32 +63,75 @@ class ParameterModifier:
             print(f"Warning: Section '{section}' non supportée")
     
     def _modify_transport_properties(self, param: str, value):
-        """Modifie constant/transportProperties pour Carreau."""
-        file_path = self.case_dir / "constant" / "transportProperties"
-        if not file_path.exists():
-            print(f"Warning: {file_path} not found")
-            return
-        
-        content = file_path.read_text()
-        
+        """Modifie les fichiers de rhéologie OpenFOAM 13.
+
+        OpenFOAM 13 avec incompressibleVoF utilise:
+        - constant/momentumTransport.water → modèle BirdCarreau (nu0, nuInf, k, n)
+        - constant/physicalProperties.water → viscosité de base (nu)
+
+        IMPORTANT: Conversion viscosité dynamique → cinématique
+        - eta0, eta_inf sont en Pa·s (viscosité dynamique)
+        - OpenFOAM attend nu0, nuInf, nu en m²/s (viscosité cinématique)
+        - Conversion: nu = eta / rho (avec rho = 3000 kg/m³ pour encre Ag/AgCl)
+        """
+        import re
+
+        # Densité de l'encre Ag/AgCl (kg/m³)
+        RHO_INK = 3000.0
+
         # Mapping des paramètres Carreau
         param_map = {
             'eta0': 'nu0',
-            'eta_inf': 'nuInf', 
+            'eta_inf': 'nuInf',
             'lambda': 'k',
             'n': 'n'
         }
-        
+
         of_param = param_map.get(param, param)
-        
-        # Remplacer la valeur (format OpenFOAM: paramName value;)
-        import re
-        pattern = rf'({of_param}\s+)[^;]+(;)'
-        replacement = rf'\g<1>{value}\2'
-        new_content = re.sub(pattern, replacement, content)
-        
-        file_path.write_text(new_content)
-        print(f"  ✓ {param} = {value} dans transportProperties")
+
+        # Conversion pour les viscosités (Pa·s → m²/s)
+        if param in ['eta0', 'eta_inf']:
+            nu_value = value / RHO_INK
+            print(f"  → Conversion: η = {value} Pa·s → ν = {nu_value:.6e} m²/s (ρ = {RHO_INK} kg/m³)")
+            formatted_value = f"{nu_value:.6e}"
+        else:
+            formatted_value = str(value)
+
+        # =====================================================================
+        # 1. Modifier momentumTransport.water (fichier principal pour Carreau)
+        # =====================================================================
+        momentum_file = self.case_dir / "constant" / "momentumTransport.water"
+        if momentum_file.exists():
+            content = momentum_file.read_text()
+            pattern = rf'({of_param}\s+)[^;]+(;)'
+            new_content = re.sub(pattern, rf'\g<1>{formatted_value}\2', content)
+            momentum_file.write_text(new_content)
+            print(f"  ✓ {of_param} = {formatted_value} dans momentumTransport.water")
+        else:
+            print(f"  ⚠ momentumTransport.water non trouvé")
+
+        # =====================================================================
+        # 2. Modifier physicalProperties.water (viscosité de base nu)
+        # =====================================================================
+        if param == 'eta0':
+            phys_file = self.case_dir / "constant" / "physicalProperties.water"
+            if phys_file.exists():
+                content = phys_file.read_text()
+                pattern = r'(nu\s+)[^;]+(;)'
+                new_content = re.sub(pattern, rf'\g<1>{formatted_value}\2', content)
+                phys_file.write_text(new_content)
+                print(f"  ✓ nu = {formatted_value} dans physicalProperties.water")
+
+        # =====================================================================
+        # 3. Modifier transportProperties (rétrocompatibilité)
+        # =====================================================================
+        transport_file = self.case_dir / "constant" / "transportProperties"
+        if transport_file.exists():
+            content = transport_file.read_text()
+            pattern = rf'({of_param}\s+)[^;]+(;)'
+            new_content = re.sub(pattern, rf'\g<1>{formatted_value}\2', content)
+            transport_file.write_text(new_content)
+            print(f"  ✓ {of_param} = {formatted_value} dans transportProperties")
     
     def _modify_alpha_water(self, surface: str, angle: float):
         """Modifie 0/alpha.water pour les angles de contact."""

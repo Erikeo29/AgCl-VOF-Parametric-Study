@@ -1,0 +1,28 @@
+# =============================================================================
+# ÉTUDE PARAMÉTRIQUE: viscosity_gap60
+# =============================================================================
+# Gap 60µm (buse remontée de 30µm)
+# Sweep viscosité: 0.5, 1.5, 3.0 Pa·s
+
+name: viscosity_gap60
+description: Effet de la viscosité avec gap 60µm (buse y=0.188-0.628mm)
+
+base: ../base_parameters.yaml
+
+sweep:
+  parameter: rheology.eta0
+  values: [0.5, 1.5, 3.0]
+
+outputs:
+  - spreading_diameter
+  - contact_angle_left
+  - contact_angle_right
+
+execution:
+  parallel: false
+  timeout: 7200
+
+postprocessing:
+  generate_animations: true
+  comparison_plots: true
+  export_csv: true

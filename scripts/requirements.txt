@@ -24,3 +24,8 @@ h5py>=3.0
 # black>=21.0  # Code formatter
 # flake8>=3.9  # Linter
 # mypy>=0.910  # Type checker
+
+# GUI
+streamlit>=1.15
+pyyaml>=6.0
+

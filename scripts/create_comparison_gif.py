@@ -87,7 +87,8 @@ def create_frame(vtk_files_per_case, frame_idx, labels):
 def main():
     parser = argparse.ArgumentParser(description="Génère un GIF comparatif pour une étude paramétrique")
     parser.add_argument('--study', required=True, help='Nom de l\'étude')
-    parser.add_argument('--fps', type=int, default=5, help='Images par seconde (défaut: 5)')
+    parser.add_argument('--fps', type=float, default=2, help='Images par seconde (défaut: 2, plus lent)')
+    parser.add_argument('--pause', type=float, default=2.0, help='Pause à la fin en secondes (défaut: 2)')
     args = parser.parse_args()
     
     study_dir = RESULTS_DIR / args.study
@@ -154,17 +155,25 @@ def main():
         frames.append(img)
     
     print(f"\nSauvegarde du GIF...")
-    
+
     # Créer le dossier comparison
     output_dir = study_dir / "comparison"
     output_dir.mkdir(exist_ok=True)
-    
+
     output_file = output_dir / f"{args.study}_comparison.gif"
     duration = 1.0 / args.fps
+
+    # Ajouter des frames de pause à la fin
+    if args.pause > 0 and frames:
+        n_pause_frames = int(args.pause * args.fps)
+        print(f"  Ajout de {n_pause_frames} frames de pause ({args.pause}s)")
+        frames.extend([frames[-1]] * n_pause_frames)
+
     imageio.mimsave(output_file, frames, duration=duration, loop=0)
-    
+
     print(f"\n✅ GIF créé: {output_file}")
     print(f"   Taille: {output_file.stat().st_size / 1024:.1f} KB")
+    print(f"   FPS: {args.fps}, Pause finale: {args.pause}s")
 
 
 if __name__ == "__main__":

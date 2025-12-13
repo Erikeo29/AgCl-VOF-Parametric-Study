@@ -20,11 +20,7 @@ FoamFile
 // Density: 1.2 kg/m³
 // Kinematic viscosity: nu = 1e-5 / 1.2 = 8.333e-6 m²/s
 
-viscosityModel  constant;
-
 rho             1.2;
-
-nu              8.333e-06;
 
 
 // ************************************************************************* //
