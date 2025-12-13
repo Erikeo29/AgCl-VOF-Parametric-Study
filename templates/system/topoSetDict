@@ -13,24 +13,24 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// SIM45: COMSOL geometry with reduced ink volume
+// Gap 60µm - buse remontée de 30µm
 // Puit: 0.8 mm x 0.128 mm
-// Buse: 0.25 mm x 0.19 mm (ratio 46%)
+// Buse: 0.3 mm x 0.19 mm, bas à y=0.188mm (gap 60µm)
 //
-// Ink nozzle region: X ∈ [0.275, 0.525] mm, Y ∈ [0.128, 0.318] mm
-// In meters: X ∈ [0.000275, 0.000525], Y ∈ [0.000128, 0.000318]
+// Ink nozzle region: X ∈ [-0.15, 0.15] mm, Y ∈ [0.188, 0.378] mm
+// In meters: X ∈ [-0.00015, 0.00015], Y ∈ [0.000188, 0.000378]
 
 actions
 (
-    // Create cellSet for ink nozzle region (Block 3 from blockMeshDict)
+    // Create cellSet for ink nozzle region (buse centrée)
     {
         name    inkRegionSet;
         type    cellSet;
         action  new;
         source  boxToCell;
-        box     (0.000275 0.000128 -1) (0.000525 0.000318 1);
-        // X: 0.275-0.525 mm (nozzle width = 0.25 mm, centered on x=0.4)
-        // Y: 0.128-0.318 mm (nozzle height = 0.19 mm)
+        box     (-0.00015 0.000188 -1) (0.00015 0.000378 1);
+        // X: -0.15 to 0.15 mm (nozzle width = 0.3 mm, centered)
+        // Y: 0.188-0.378 mm (nozzle height = 0.19 mm, gap 60µm)
         // Z: full range
     }
 

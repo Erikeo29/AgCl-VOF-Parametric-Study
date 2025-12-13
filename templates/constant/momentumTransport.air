@@ -23,7 +23,9 @@ simulationType  laminar;
 
 laminar
 {
-    model   Stokes;
+    model           generalisedNewtonian;
+    viscosityModel  constant;
+    nu              1.48e-05;
 }
 
 // ************************************************************************* //

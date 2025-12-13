@@ -13,15 +13,15 @@ FoamFile
     object      setFieldsDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-// SIM45: COMSOL geometry with reduced ink volume
+// Gap 60µm - buse remontée de 30µm
 // Puit: 0.8 mm x 0.128 mm
-// Buse: 0.25 mm x 0.19 mm (ratio 46%)
+// Buse: 0.25 mm x 0.19 mm, bas à y=0.188mm (gap 60µm)
 //
-// Air blocks: y ∈ [0, 0.128] mm, x ∈ [0, 0.8] mm
-// Ink block:  y ∈ [0.128, 0.318] mm, x ∈ [0.275, 0.525] mm
+// Air blocks: y ∈ [0, 0.188] mm (puit + gap 60µm)
+// Ink block:  y ∈ [0.188, 0.378] mm, x ∈ [-0.15, 0.15] mm (dans la buse)
 //
 // In meters:
-// Ink: X ∈ [0.000275, 0.000525], Y ∈ [0.000128, 0.000318], Z ∈ [0, 0.0001]
+// Ink: X ∈ [-0.00015, 0.00015], Y ∈ [0.000188, 0.000378], Z ∈ [0, 0.0001]
 
 defaultFieldValues
 (
@@ -30,11 +30,11 @@ defaultFieldValues
 
 regions
 (
-    // Initialize ink in the nozzle region (Block 3 from blockMeshDict)
-    // Buse 250 um x 250 um, centered
+    // Initialize ink in the nozzle region (buse centrée x=-0.15 à 0.15)
+    // Buse 300 um x 190 um, gap 60µm
     boxToCell
     {
-        box (0.000275 0.000128 -1) (0.000525 0.000318 1);
+        box (-0.00015 0.000188 -1) (0.00015 0.000378 1);
         fieldValues
         (
             volScalarFieldValue alpha.water 1  // Ink in nozzle

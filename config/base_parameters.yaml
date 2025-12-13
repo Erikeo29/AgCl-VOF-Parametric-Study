@@ -51,10 +51,10 @@ process:
 # GÉOMÉTRIE
 # -----------------------------------------------------------------------------
 geometry:
-  nozzle_diameter: 0.0005     # [m] Diamètre buse
-  nozzle_height: 0.0003       # [m] Hauteur buse
-  domain_width: 0.002         # [m] Largeur domaine
-  domain_height: 0.001        # [m] Hauteur domaine
+  nozzle_diameter: 0.0003     # [m] Diamètre buse (0.3mm)
+  nozzle_height: 0.00044      # [m] Hauteur buse (0.44mm)
+  domain_width: 0.0016        # [m] Largeur domaine (1.6mm)
+  domain_height: 0.0006       # [m] Hauteur domaine (~0.6mm)
 
 # -----------------------------------------------------------------------------
 # PARAMÈTRES NUMÉRIQUES
