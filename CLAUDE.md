@@ -116,6 +116,37 @@ python3 scripts/results_collector.py --study contact_angles
 
 ---
 
+## Post-traitement AUTOMATIQUE (OBLIGATOIRE)
+
+**Après chaque étude paramétrique terminée, TOUJOURS exécuter:**
+
+### Étape 1: Conversion VTK pour chaque run
+```bash
+source /opt/openfoam13/etc/bashrc
+for run in results/<study_name>/run_*; do
+    foamToVTK -case "$run"
+done
+```
+
+### Étape 2: Génération du GIF comparatif
+```bash
+python3 scripts/create_comparison_gif.py --study <study_name>
+```
+
+### Résultat attendu
+```
+results/<study_name>/
+├── run_001_.../VTK/          ← Fichiers VTK pour ParaView
+├── run_002_.../VTK/
+├── ...
+└── comparison/
+    └── <study_name>_comparison.gif  ← GIF comparatif côte à côte
+```
+
+**Le GIF comparatif permet de visualiser l'effet du paramètre sur toutes les simulations simultanément.**
+
+---
+
 ## Paramètres Disponibles
 
 | Section | Paramètre | Fichier OF modifié |
@@ -152,5 +183,5 @@ python3 scripts/results_collector.py --study contact_angles
 
 ---
 
-**Version**: 5.0 - Études Paramétriques
-**Dernière mise à jour**: 2025-12-12
+**Version**: 5.1 - Études Paramétriques + Post-traitement automatique
+**Dernière mise à jour**: 2025-12-13
