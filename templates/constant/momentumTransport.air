@@ -1,9 +1,9 @@
 /*--------------------------------*- C++ -*----------------------------------*\
-  =========                 |
+  =========                 | 
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
     \\  /    A nd           | Version:  13
-     \\/     M anipulation  |
+     \\/     M anipulation  | 
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
@@ -14,18 +14,14 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// Air phase: simple Newtonian (constant viscosity)
-// Source: PARAMETERS_AgCl.md → Fluid Properties: Air
-// Viscosity handled by constant nu in physicalProperties.air
-// Using Stokes model (simplest laminar model with constant viscosity)
+// Air phase: Laminar flow with constant viscosity defined here.
 
 simulationType  laminar;
 
 laminar
 {
     model           generalisedNewtonian;
-    viscosityModel  constant;
-    nu              1.48e-05;
+    viscosityModel  Newtonian;
 }
 
 // ************************************************************************* //

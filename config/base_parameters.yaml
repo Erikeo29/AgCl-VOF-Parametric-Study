@@ -63,4 +63,4 @@ numerical:
   maxCo: 0.3              # Courant max
   maxAlphaCo: 0.3         # Courant max pour alpha
   maxDeltaT: 1e-5         # [s] Pas de temps max
-  writeInterval: 0.001    # [s] Intervalle d'écriture
+  writeInterval: 0.005    # [s] Intervalle d'écriture (5ms → 80 dossiers pour 0.4s)
