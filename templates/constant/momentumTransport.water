@@ -14,13 +14,13 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// Non-Newtonian ink (water) phase with Carreau rheology
-// SIM62: Viscosité réduite (η₀ = 0.5 Pa·s au lieu de 1.5 Pa·s)
-// Parameters:
-//   η₀ = 0.5 Pa·s (zero-shear viscosity) - REDUCED 3x
-//   η∞ = 0.167 Pa·s (infinite-shear viscosity) - proportionally reduced
-//   λ = 0.15 s (relaxation time)
-//   n = 0.7 (power-law index, <1 means shear-thinning)
+// Non-Newtonian ink (water) phase with Bird-Carreau rheology
+// Source: base_parameters.yaml → rheology.*
+// Default parameters (GUI will modify these based on user input):
+//   η₀ = 1.5 Pa·s (zero-shear viscosity)
+//   η∞ = 0.001 Pa·s (infinite-shear viscosity)
+//   λ = 0.1 s (relaxation time)
+//   n = 0.5 (power-law index, <1 means shear-thinning)
 
 simulationType  laminar;
 
@@ -29,17 +29,21 @@ laminar
     model           generalisedNewtonian;
     viscosityModel  BirdCarreau;
 
-    // Zero-shear viscosity: nu0 = η₀ / ρ = 0.5 / 3000 = 1.667e-4 m²/s
-    nu0             1.667e-4;
+    // Zero-shear viscosity: nu0 = η₀ / ρ_ink
+    // Default: nu0 = 1.5 / 3000 = 5.0e-4 m²/s
+    nu0             5.0e-04;
 
-    // Infinite-shear viscosity: nuInf = η∞ / ρ = 0.167 / 3000 = 5.56e-5 m²/s
-    nuInf           5.56e-5;
+    // Infinite-shear viscosity: nuInf = η∞ / ρ_ink
+    // Default: nuInf = 0.001 / 3000 = 3.33e-7 m²/s
+    nuInf           3.33e-07;
 
-    // Time constant: k = λ = 0.15 s (relaxation time)
-    k               0.15;
+    // Time constant: k = λ (relaxation time)
+    // Default: k = 0.1 s
+    k               0.1;
 
-    // Power-law index: n = 0.7 (shear-thinning behavior, n < 1)
-    n               0.7;
+    // Power-law index: n (shear-thinning behavior, n < 1)
+    // Default: n = 0.5
+    n               0.5;
 }
 
 // ************************************************************************* //

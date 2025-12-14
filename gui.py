@@ -27,8 +27,7 @@ def get_fixed_geometry_from_blockmesh(file_path):
     vertices_match = re.search(r'vertices\s*\((.*?)\);', content, re.DOTALL)
     if vertices_match:
         x_coords, y_coords = [], []
-        # Corrected regex to capture both x and y coordinates in one pass
-        pattern = r'^\s*\(\s*([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)'
+        pattern = r'^\s*\(\s*([-+]?[0-9.]+\s*)\s+([-+]?[0-9.]+\s*)'
         for match in re.finditer(pattern, vertices_match.group(1), re.MULTILINE):
             x_coords.append(float(match.group(1)))
             y_coords.append(float(match.group(2)))
@@ -45,150 +44,79 @@ class ParameterModifier:
         self.log = []
 
     def apply_all(self, params):
-        # This is a more structured way to apply parameters
-        # Group all modifications for a file together
+        # Rheology for water
+        RHO_INK = params.get('physical', {}).get('rho_ink', 3000.0)
+        param_map = {'eta0': 'nu0', 'eta_inf': 'nuInf', 'lambda': 'k', 'n': 'n'}
+        mt_water_params = {}
+        for p, v in params.get('rheology', {}).items():
+            of_param = param_map.get(p)
+            if of_param: mt_water_params[of_param] = f"{v / RHO_INK:.6e}" if p in ['eta0', 'eta_inf'] else str(v)
+        self._apply_params_line_by_line(self.case_dir / "constant/momentumTransport.water", mt_water_params)
         
-        # Physical Properties
-        phys_air_params = {'rho': params['physical']['rho_air'], 'nu': params['physical']['nu_air']}
-        self._apply_params_line_by_line(self.case_dir / "constant/physicalProperties.air", phys_air_params)
-        
+        # Physical Properties for Water
         phys_water_params = {'rho': params['physical']['rho_ink']}
-        if 'eta0' in params['rheology']:
-             RHO_INK = params.get('physical', {}).get('rho_ink', 3000.0)
-             phys_water_params['nu'] = f"{params['rheology']['eta0'] / RHO_INK:.6e}"
+        if 'eta0' in params['rheology']: phys_water_params['nu'] = f"{params['rheology']['eta0'] / RHO_INK:.6e}"
         self._apply_params_line_by_line(self.case_dir / "constant/physicalProperties.water", phys_water_params)
-        
-        # Rheology
-        self._modify_rheology(params['rheology'])
+
+        # Physical Properties for Air
+        phys_air_params = {
+            'rho': params['physical']['rho_air'], 
+            'nu': params['physical']['nu_air']
+            }
+        self._apply_params_line_by_line(self.case_dir / "constant/physicalProperties.air", phys_air_params)
 
         # Contact Angles
-        self._modify_alpha_water_robust(params['contact_angles'])
+        self._modify_alpha_water_robust(params.get('contact_angles', {}))
 
         # Surface Tension
-        self._apply_params_line_by_line(self.case_dir / "constant/phaseProperties", params['surface'])
+        self._apply_params_line_by_line(self.case_dir / "constant/phaseProperties", params.get('surface', {}))
         
         # Control Dict
         control_params = params['numerical'].copy()
-        if 'end_time' in params['process']:
-            control_params['endTime'] = params['process']['end_time']
+        if 'end_time' in params['process']: control_params['endTime'] = params['process']['end_time']
         self._apply_params_line_by_line(self.case_dir / 'system' / 'controlDict', control_params)
-    
+
     def _apply_params_line_by_line(self, file_path: Path, params_to_set: dict):
-        if not file_path.exists(): self.log.append(f"  ⚠ {file_path.name} non trouvé"); return
+        if not file_path.exists() or not params_to_set: return
         lines = file_path.read_text().split('\n')
         new_lines = []
-        
-        modified_keys_this_call = set() # Track keys that were actually modified
-
+        params_to_find = params_to_set.copy()
         for line in lines:
-            stripped_line = line.strip()
-            
-            key_to_match = None
-            for k in params_to_set:
-                # Use regex to find the keyword as a whole word at the start of the stripped line
-                # followed by whitespace or a semicolon. This is more robust.
-                if re.match(rf'^{re.escape(k)}\s*;', stripped_line) or re.match(rf'^{re.escape(k)}\s+', stripped_line):
-                    key_to_match = k
-                    break
-            
-            if key_to_match:
-                value = params_to_set[key_to_match]
-                # Preserve original indentation
+            key_in_line = next((k for k in params_to_find if line.strip().startswith(k + ' ')), None)
+            if key_in_line:
+                value_to_set = params_to_find[key_in_line]
                 indent = line[:len(line) - len(line.lstrip())]
-                new_lines.append(f"{indent}{key_to_match}{' ' * (16 - len(key_to_match))}{value};")
-                new_lines.append(new_line)
-                self.log.append(f"  ✓ Set {key_to_match} = {value} in {file_path.name}")
-                modified_keys_this_call.add(key_to_match)
-            else: # This else ensures unmatched lines are copied
+                new_lines.append(f"{indent}{key_in_line}{' ' * (16 - len(key_in_line))}{value_to_set};")
+                self.log.append(f"  ✓ Set {key_in_line} = {value_to_set} in {file_path.name}")
+                del params_to_find[key_in_line]
+            else:
                 new_lines.append(line)
-        
         file_path.write_text('\n'.join(new_lines))
-        # Log any keys that were supposed to be set but weren't found in the file
-        for key in set(params_to_set.keys()) - modified_keys_this_call:
-            self.log.append(f"  - Keyword '{key}' non trouvé dans {file_path.name}")
 
-
-    def _modify_rheology(self, rheology_params):
-        RHO_INK = st.session_state.params.get('physical', {}).get('rho_ink', 3000.0)
-        param_map = {'eta0': 'nu0', 'eta_inf': 'nuInf', 'lambda': 'k', 'n': 'n'}
-        
-        # Prepare params for momentumTransport.water
-        mt_water_params = {}
-        for param, value in rheology_params.items():
-            of_param = param_map.get(param)
-            if of_param:
-                formatted_value = f"{value / RHO_INK:.6e}" if param in ['eta0', 'eta_inf'] else str(value)
-                mt_water_params[of_param] = formatted_value
-        
-        self._apply_params_line_by_line(self.case_dir / "constant/momentumTransport.water", mt_water_params)
-
-        # Legacy transportProperties
-        tr_params = {}
-        for param, value in rheology_params.items():
-            of_param = param_map.get(param)
-            if of_param:
-                formatted_value = f"{value / RHO_INK:.6e}" if param in ['eta0', 'eta_inf'] else str(value)
-                tr_params[of_param] = formatted_value
-        self._apply_params_line_by_line(self.case_dir / "constant/transportProperties", tr_params)
-
-
-    def _modify_physical_properties(self, param: str, value):
-        # This function is now superseded by apply_all logic which builds phys_air_params and phys_water_params
-        # and calls _apply_params_line_by_line once for each.
-        # This function will not be called directly for rho/nu, but kept for future expansion if needed.
-        self.log.append(f"  ⚠ _modify_physical_properties called directly for {param}. Should be handled by apply_all.")
-        
-
-    def _modify_alpha_water_robust(self, angle_params: dict):
+    def _modify_alpha_water_robust(self, angle_params):
         file_path = self.case_dir / "0" / "alpha.water"
         if not file_path.exists(): self.log.append(f"  ⚠ {file_path.name} non trouvé"); return
-        
-        lines = file_path.read_text().split('\n')
-        new_lines = []
-        in_target_block = False
+        lines, new_lines, in_block, modified = file_path.read_text().split('\n'), [], False, False
         current_surface = None
-        
         for line in lines:
             stripped = line.strip()
-            
-            # Find the start of a boundary patch block we want to modify
-            if not in_target_block:
-                for surface_name in angle_params.keys():
-                    if stripped == surface_name:
-                        in_target_block = True
-                        current_surface = surface_name
-                        break
-            
-            if in_target_block:
+            if not in_block and stripped in angle_params:
+                in_block = True
+                current_surface = stripped
+            elif in_block:
                 if stripped.startswith('theta0'):
-                    angle = angle_params.get(current_surface)
-                    if angle is not None:
-                        new_lines.append(f"        theta0          {int(float(angle))};")
-                        self.log.append(f"  ✓ {current_surface} theta0 = {angle}°")
-                        continue # Skip appending the old line
-                elif stripped.startswith('}')'): # End of current block
-                    in_target_block = False
-                    current_surface = None
-            
+                    new_lines.append(f"        theta0          {int(float(angle_params[current_surface]))};")
+                    self.log.append(f"  ✓ {current_surface} theta0 = {angle_params[current_surface]}°")
+                    modified = True
+                    # Don't append the old line, continue to the next
+                    continue
+                elif stripped.startswith('}'):
+                    in_block = False
             new_lines.append(line)
-        
-        file_path.write_text('\n'.join(new_lines))
+        if modified: file_path.write_text('\n'.join(new_lines))
+        else: self.log.append(f"  - Aucun angle de contact n'a pu être modifié dans {file_path.name}")
 
-
-    def _modify_surface_tension(self, param: str, value): self._apply_params_line_by_line(self.case_dir / "constant/phaseProperties", {param: value})
-    def _modify_control_dict(self, param: str, value): self._apply_params_line_by_line(self.case_dir / "system/controlDict", {param: value})
-    def _modify_process(self, param: str, value):
-        if param == 'end_time': self._apply_params_line_by_line(self.case_dir / 'system' / 'controlDict', {'endTime': value})
-        else: self.log.append(f"  ⚠ {param}: modification non implémentée")
-    
-    # This legacy method is no longer used due to _apply_params_line_by_line
-    def _modify_file_content_legacy(self, file_path, pattern, replacement, msg):
-        if not file_path.exists(): self.log.append(f"  ⚠ {file_path.name} non trouvé"); return
-        content = file_path.read_text()
-        new_content, count = re.subn(pattern, replacement, content, flags=re.MULTILINE)
-        if count > 0: file_path.write_text(new_content); self.log.append(f"  ✓ {msg}")
-        else: self.log.append(f"  - Pattern non trouvé pour '{msg.split('=')[0].strip()}'")
-
+# --- Streamlit App UI ---
 st.set_page_config(layout="wide"); st.title("Interface de Contrôle pour Simulation OpenFOAM")
 if 'params' not in st.session_state: st.session_state.params = load_parameters(PARAMS_FILE)
 with st.sidebar:
@@ -210,31 +138,54 @@ with st.sidebar:
     else: st.warning("blockMeshDict non trouvé.")
 
 def run_simulation_in_st(run_dir):
-    log_placeholder = st.empty(); command = ["foamRun", "-solver", "incompressibleVoF", "-case", str(run_dir)]
-    log_content = "🚀 Lancement de la simulation...\n"
-    log_content += f"Dossier: {run_dir}\nCommande: {' '.join(command)}\n\n"
-    log_placeholder.code(log_content, language='log')
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding='utf-8', errors='replace')
-    with open(run_dir / "run.log", 'w') as log_f:
-        for line in iter(process.stdout.readline, ''):
-            log_content += line; log_f.write(line); log_placeholder.code(log_content, language='log')
-    if process.wait() == 0: st.success("✅ Simulation terminée avec succès !")
-    else: st.error(f"❌ La simulation a échoué ! (code {process.returncode})")
+    """Lance la simulation en arrière-plan avec nohup pour éviter les blocages."""
+    log_file = run_dir / "run.log"
+    pid_file = run_dir / "foam.pid"
+
+    # OpenFOAM requires sourcing the bashrc before running commands
+    foam_source = "source /opt/openfoam13/etc/bashrc"
+    foam_cmd = f"foamRun -solver incompressibleVoF -case {run_dir}"
+
+    # Lancer en arrière-plan avec nohup, redirection vers log
+    full_command = f"nohup bash -c '{foam_source} && {foam_cmd}' > {log_file} 2>&1 & echo $!"
+
+    # Lancer le processus
+    result = subprocess.run(full_command, shell=True, executable='/bin/bash', capture_output=True, text=True)
+    pid = result.stdout.strip()
+
+    # Sauvegarder le PID
+    pid_file.write_text(pid)
+
+    st.success(f"Simulation lancée en arrière-plan (PID: {pid})")
+    st.info(f"""
+**Dossier:** `{run_dir}`
+
+**Suivre la progression:**
+```bash
+tail -f {log_file}
+```
+
+**Voir les dossiers de temps:**
+```bash
+ls {run_dir}
+```
+
+**Arrêter la simulation:**
+```bash
+kill {pid}
+```
+    """)
 
 st.header("Lancement")
 if st.button("🚀 Lancer une nouvelle simulation", type="primary"):
     timestr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     case_dir = RESULTS_DIR / f"gui_run_{timestr}"
     with st.status(f"Préparation du cas : {case_dir.name}", expanded=True) as status:
-        st.write("Création du dossier...")
-        case_dir.mkdir(parents=True, exist_ok=True) # Ensure dir exists before copytree
         st.write("Copiage des templates..."); shutil.copytree(TEMPLATES_DIR, case_dir, dirs_exist_ok=True)
         st.write("Application des paramètres..."); 
         modifier = ParameterModifier(case_dir)
         modifier.apply_all(st.session_state.params)
-        st.text("\n".join(modifier.log)); 
-        status.update(label="Préparation terminée", state="complete")
-    
+        st.text("\n".join(modifier.log)); status.update(label="Préparation terminée", state="complete")
     if debug_mode:
         st.subheader("🕵️‍♂️ DRY RUN - Contenu des fichiers générés")
         files_to_check = ["constant/physicalProperties.air", "constant/momentumTransport.air", "constant/momentumTransport.water", "0/alpha.water"]
