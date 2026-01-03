@@ -1,0 +1,187 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      parameters;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+//
+// FICHIER CENTRAL DE PARAMETRES - Style COMSOL
+// =============================================
+//
+// Tous les parametres physiques et geometriques sont definis ici.
+// Les autres fichiers OpenFOAM utilisent ces variables via #include.
+//
+// UTILISATION:
+//   Dans blockMeshDict, setFieldsDict, etc:
+//     #include "parameters"
+//     ... utiliser $variable ou #calc "$variable" ...
+//
+// UNITES: Systeme SI (m, kg, s, Pa)
+//   Sauf pour blockMesh qui utilise scale 0.001 (mm -> m)
+//
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// ============================================================================
+// 1. GEOMETRIE - Dimensions principales [mm pour blockMesh, m pour setFields]
+// ============================================================================
+
+// --- Puit ---
+x_puit          0.8;        // [mm] Largeur totale du puit
+x_puit_half     0.4;        // [mm] Demi-largeur puit (= x_puit / 2)
+y_puit          0.128;      // [mm] Profondeur du puit
+
+// --- Plateau / Isolant (surface horizontale de chaque cote du puit) ---
+x_plateau       0.4;        // [mm] Largeur du plateau de chaque cote
+
+// --- Buse (seringue) ---
+x_buse          0.3;        // [mm] Largeur de la buse
+x_buse_half     0.15;       // [mm] Demi-largeur buse (= x_buse / 2)
+
+// --- Gap vertical (entre haut puit et bas buse) ---
+y_gap_buse      0.060;      // [mm] Distance verticale puit-buse (60 um)
+
+// --- Decalage horizontal de la buse ---
+// x_gap_buse = 0 : buse centree sur le puit
+// x_gap_buse < 0 : buse decalee vers la gauche
+// x_gap_buse > 0 : buse decalee vers la droite
+x_gap_buse      0.0;        // [mm] Decalage horizontal (0 = centre, etude: 0 a -0.05)
+
+// --- Ratio surface buse/puit ---
+// Surface puit = x_puit * y_puit = 0.8 * 0.128 = 0.1024 mm²
+// Surface buse = x_buse * y_buse
+// Pour ratio 100%: y_buse = (x_puit * y_puit) / x_buse
+ratio_surface   1.0;        // [-] Ratio surface buse / surface puit (1.0 = 100%)
+
+// --- Hauteur buse (geometrie) ---
+y_buse          0.440;      // [mm] Hauteur totale de la buse (geometrie)
+
+// --- Hauteur encre initiale dans la buse ---
+// IMPORTANT: Buse remplie a 100% comme GUI_RUN!
+// La force piston (fvOptions) pousse l'encre vers le bas
+y_ink           0.440;      // [mm] Hauteur d'encre initiale = hauteur buse (100%)
+
+// --- Zone air au-dessus du gap ---
+y_air           0.080;      // [mm] Hauteur de la zone air laterale
+
+// --- Position X extremite (calculee) ---
+// x_isolant = x_puit_half + x_plateau = 0.4 + 0.4 = 0.8
+x_isolant       0.8;        // [mm] Position x extremite du domaine
+
+// --- Positions Y calculees [mm] ---
+// y_buse_bottom = y_puit + y_gap_buse
+y_buse_bottom   0.188;      // [mm] = 0.128 + 0.060 (bas de la buse)
+// y_buse_top = y_buse_bottom + y_buse
+y_buse_top      0.628;      // [mm] = 0.188 + 0.440 (haut de la buse / inlet)
+// y_ink_top = y_buse_bottom + y_ink = y_buse_top (buse 100% remplie)
+y_ink_top       0.628;      // [mm] = 0.188 + 0.440 (haut de l'encre = haut buse)
+// y_air_top = y_buse_bottom + y_air
+y_air_top       0.268;      // [mm] = 0.188 + 0.080 (haut zone air laterale)
+
+// --- Positions en metres [m] (pour setFieldsDict) ---
+y_buse_bottom_m 0.000188;   // [m] = y_buse_bottom * 1e-3
+y_buse_top_m    0.000628;   // [m] = y_buse_top * 1e-3
+y_ink_top_m     0.000628;   // [m] = y_ink_top * 1e-3 (haut encre = haut buse)
+x_buse_half_m   0.00015;    // [m] = x_buse_half * 1e-3
+x_gap_buse_m    0.0;        // [m] = x_gap_buse * 1e-3
+
+// ============================================================================
+// 2. MAILLAGE - Resolution
+// ============================================================================
+
+cell_size       5.0;        // [um] Taille de cellule cible
+// Nombre de cellules = dimension / cell_size
+// Exemple: puit y: 128um / 5um = 26 cellules
+
+// ============================================================================
+// 3. PHYSIQUE - Encre (phase "water")
+// ============================================================================
+
+// --- Densite ---
+rho_ink         3000;       // [kg/m³] Densite encre AgCl
+
+// --- Rheologie Bird-Carreau ---
+// eta(gamma_dot) = eta_inf + (eta_0 - eta_inf) * [1 + (k*gamma_dot)²]^((n-1)/2)
+//
+// NOTE: Valeurs calibrees pour produire de l'overflow (cf. GUI_RUN de reference)
+//
+eta_0           1.0;        // [Pa.s] Viscosite zero-shear (repos)
+eta_inf         0.001;      // [Pa.s] Viscosite infinite-shear (tres faible!)
+k_carreau       0.1;        // [s] Temps de relaxation (constante k)
+n_carreau       0.5;        // [-] Exposant loi puissance (n < 1 = shear-thinning)
+
+// --- Viscosites cinematiques (nu = eta/rho) ---
+nu_0            3.333e-4;   // [m²/s] = eta_0 / rho_ink = 1.0 / 3000
+nu_inf          3.333e-7;   // [m²/s] = eta_inf / rho_ink = 0.001 / 3000
+
+// --- Tension de surface ---
+sigma           0.040;      // [N/m] = 40 mN/m
+
+// ============================================================================
+// 4. PHYSIQUE - Air
+// ============================================================================
+
+rho_air         1.2;        // [kg/m³] Densite air
+mu_air          1e-5;       // [Pa.s] Viscosite dynamique air
+nu_air          8.33e-6;    // [m²/s] = mu_air / rho_air
+
+// ============================================================================
+// 5. ANGLES DE CONTACT [degres]
+// ============================================================================
+
+// --- Substrat (fond du puit) ---
+CA_substrate            35;     // [deg] Angle de contact substrat (hydrophile)
+
+// --- Parois isolant (verticales, cote puit) ---
+CA_wall_isolant_left    15;     // [deg] Angle paroi isolant gauche (hydrophile)
+CA_wall_isolant_right   120;    // [deg] Angle paroi isolant droite
+
+// --- Surfaces isolant (horizontales, au-dessus puit) ---
+// NOTE: Ces surfaces sont critiques pour l'overflow!
+CA_top_isolant_left     15;     // [deg] Angle surface isolant gauche (hydrophile pour overflow)
+CA_top_isolant_right    120;    // [deg] Angle surface isolant droite
+
+// --- Parois buse interieures (contact avec encre) ---
+CA_buse_int_left        90;     // [deg] Angle buse interieur gauche
+CA_buse_int_right       90;     // [deg] Angle buse interieur droite
+
+// --- Parois buse exterieures (contact avec air) ---
+CA_buse_ext_left        180;    // [deg] Angle buse exterieur gauche (parfaitement hydrophobe)
+CA_buse_ext_right       180;    // [deg] Angle buse exterieur droite
+
+// ============================================================================
+// 6. PARAMETRES NUMERIQUES
+// ============================================================================
+
+// --- Temps ---
+endTime         0.2;        // [s] Temps final de simulation (200 ms)
+writeInterval   0.002;      // [s] Intervalle d'ecriture (2 ms)
+deltaT          1e-6;       // [s] Pas de temps initial
+
+// --- Controle Courant ---
+maxCo           0.3;        // [-] Nombre de Courant max
+maxAlphaCo      0.3;        // [-] Nombre de Courant interface max
+maxDeltaT       1e-3;       // [s] Pas de temps maximum
+
+// ============================================================================
+// 7. VERIFICATION COHERENCE (valeurs calculees pour reference)
+// ============================================================================
+
+// Surface puit [mm²]
+S_puit          0.1024;     // = x_puit * y_puit = 0.8 * 0.128
+
+// Surface encre initiale [mm²]
+S_ink           0.057;      // = x_buse * y_ink = 0.3 * 0.190
+
+// Ratio encre/puit
+ratio_ink       0.56;       // = S_ink / S_puit ≈ 56% (comme GUI_RUN)
+
+// ************************************************************************* //

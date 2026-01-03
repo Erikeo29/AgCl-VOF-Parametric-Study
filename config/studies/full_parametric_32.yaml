@@ -1,0 +1,38 @@
+# Étude paramétrique complète - 32 combinaisons
+# Date: 2025-12-28
+#
+# Variables: CA_wall_isolant_left, CA_top_isolant_left, eta_0, eta_inf, ratio_surface
+# Fixes modifiés: CA_wall_isolant_right=120°, CA_top_isolant_right=120°
+
+name: full_parametric_32
+description: "Étude paramétrique 32 combinaisons - CA, viscosité, ratio"
+
+# Mode grille: toutes les combinaisons
+sweep_type: grid
+
+sweep:
+  parameters:
+    - name: contact_angles.wall_isolant_left
+      values: [30, 60]
+
+    - name: contact_angles.top_isolant_left
+      values: [30, 60]
+
+    - name: rheology.eta0
+      values: [0.5, 1.5]
+
+    - name: rheology.eta_inf
+      values: [0.001, 0.1]
+
+    - name: geometry.ratio_surface
+      values: [0.8, 1.2]
+
+# Configuration exécution
+execution:
+  timeout: 7200  # 2h par simulation max
+
+# Post-processing
+postprocessing:
+  generate_gif: true
+  generate_png: true
+  export_csv: true

@@ -1,0 +1,79 @@
+# =============================================================================
+# ETUDE PARAMETRIQUE: Full Sweep 24 simulations
+# =============================================================================
+# Combinaisons: 2 CA_substrate x 2 CA_wall x 2 eta0 x 3 ratio = 24 cas
+#
+# Parametres varies:
+#   - CA_substrate (fond puit): 35, 65 deg
+#   - CA_wall_isolant_left (paroi verticale): 90, 30 deg
+#   - eta_0 (viscosite): 0.5, 1.5 Pa.s
+#   - y_buse (ratio surface): 0.341 (1.0), 0.273 (0.8), 0.443 (1.3) mm
+#
+# Tous les autres parametres sont constants et seront exportes dans le CSV.
+# =============================================================================
+
+name: full_sweep_24
+description: Etude complete 24 cas - CA substrat, CA paroi, viscosite, ratio surface
+
+base: ../base_parameters.yaml
+
+# -----------------------------------------------------------------------------
+# GRID SWEEP MULTI-PARAMETRES
+# -----------------------------------------------------------------------------
+sweep_type: grid
+
+sweep:
+  parameters:
+    # Angle de contact substrat (fond du puit)
+    - name: contact_angles.substrate
+      values: [35, 65]
+
+    # Angle de contact paroi verticale gauche du puit
+    - name: contact_angles.wall_isolant_left
+      values: [90, 30]
+
+    # Viscosite zero-shear (Pa.s)
+    - name: rheology.eta0
+      values: [0.5, 1.5]
+
+    # Hauteur buse (mm) - controle le ratio surface buse/puit
+    # ratio 0.8 -> y_buse = 0.273 mm
+    # ratio 1.0 -> y_buse = 0.341 mm
+    # ratio 1.3 -> y_buse = 0.443 mm
+    - name: geometry.y_buse
+      values: [0.273, 0.341, 0.443]
+
+# -----------------------------------------------------------------------------
+# PARAMETRES DE SIMULATION (overrides)
+# -----------------------------------------------------------------------------
+overrides:
+  process:
+    end_time: 0.100           # 100 ms
+  numerical:
+    writeInterval: 0.002      # 2 ms -> 50 frames pour GIF
+
+# -----------------------------------------------------------------------------
+# SORTIES A EXTRAIRE
+# -----------------------------------------------------------------------------
+outputs:
+  - spreading_diameter
+  - contact_angle_left
+  - contact_angle_right
+  - final_shape
+
+# -----------------------------------------------------------------------------
+# OPTIONS D'EXECUTION
+# -----------------------------------------------------------------------------
+execution:
+  parallel: false
+  timeout: 7200               # 2h max par simulation
+
+# -----------------------------------------------------------------------------
+# POST-TRAITEMENT
+# -----------------------------------------------------------------------------
+postprocessing:
+  generate_animations: true
+  gif_resolution: [640, 480]
+  png_final_state: true
+  comparison_plots: true
+  export_csv: true

@@ -1,0 +1,66 @@
+# =============================================================================
+# ETUDE PARAMETRIQUE: Streamlit VOF
+# =============================================================================
+# 12 simulations pour integration dans le visualiseur Streamlit
+# Combinaisons: 3 viscosites x 2 CA wall x 2 CA substrate = 12 cas
+#
+# Format GIF/PNG cible: 640x480, style identique FEM
+# =============================================================================
+
+name: streamlit_vof
+description: Etude parametrique VOF pour integration Streamlit (12 cas)
+
+base: ../base_parameters.yaml
+
+# -----------------------------------------------------------------------------
+# GRID SWEEP MULTI-PARAMETRES
+# -----------------------------------------------------------------------------
+sweep_type: grid
+
+sweep:
+  parameters:
+    - name: rheology.eta0
+      values: [0.5, 1.5, 5.0]
+
+    - name: contact_angles.wall_isolant_left
+      values: [35, 90]
+
+    - name: contact_angles.substrate
+      values: [35, 75]
+
+# -----------------------------------------------------------------------------
+# PARAMETRES DE SIMULATION
+# -----------------------------------------------------------------------------
+# Surcharger les valeurs de base pour cette etude
+overrides:
+  process:
+    end_time: 0.100           # 100 ms (suffisant pour visualisation)
+  numerical:
+    writeInterval: 0.002      # 2ms -> 50 frames pour GIF fluide
+
+# -----------------------------------------------------------------------------
+# SORTIES A EXTRAIRE
+# -----------------------------------------------------------------------------
+outputs:
+  - spreading_diameter
+  - contact_angle_left
+  - contact_angle_right
+  - final_shape
+
+# -----------------------------------------------------------------------------
+# OPTIONS D'EXECUTION
+# -----------------------------------------------------------------------------
+execution:
+  parallel: false
+  max_parallel: 2
+  timeout: 7200               # 2h max par simulation
+
+# -----------------------------------------------------------------------------
+# POST-TRAITEMENT
+# -----------------------------------------------------------------------------
+postprocessing:
+  generate_animations: true
+  gif_resolution: [640, 480]
+  png_final_state: true
+  comparison_plots: true
+  export_csv: true

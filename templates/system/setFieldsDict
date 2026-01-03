@@ -13,15 +13,20 @@ FoamFile
     object      setFieldsDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-// Gap 60µm - buse remontée de 30µm
-// Puit: 0.8 mm x 0.128 mm
-// Buse: 0.25 mm x 0.19 mm, bas à y=0.188mm (gap 60µm)
-//
-// Air blocks: y ∈ [0, 0.188] mm (puit + gap 60µm)
-// Ink block:  y ∈ [0.188, 0.378] mm, x ∈ [-0.15, 0.15] mm (dans la buse)
-//
-// In meters:
-// Ink: X ∈ [-0.00015, 0.00015], Y ∈ [0.000188, 0.000378], Z ∈ [0, 0.0001]
+
+// ============================================================================
+// INCLUSION DU FICHIER CENTRAL DE PARAMETRES
+// ============================================================================
+#include "parameters"
+
+// ============================================================================
+// INITIALISATION DU CHAMP ALPHA (phase encre dans la buse)
+// Coordonnees en metres (SI)
+// ============================================================================
+
+// Variables en metres pour la box (avec decalage x_gap_buse)
+x_buse_left_m   #calc "-$x_buse_half_m + $x_gap_buse_m";
+x_buse_right_m  #calc "$x_buse_half_m + $x_gap_buse_m";
 
 defaultFieldValues
 (
@@ -30,14 +35,18 @@ defaultFieldValues
 
 regions
 (
-    // Initialize ink in the nozzle region (buse centrée x=-0.15 à 0.15)
-    // Buse 300 um x 190 um, gap 60µm
+    // Initialize ink in the LOWER PART of the nozzle only!
+    // IMPORTANT: La buse n'est PAS remplie a 100%!
+    // L'air au-dessus (y_ink_top -> y_buse_top) pousse l'encre via fvOptions
+    // Box: x in [x_buse_left, x_buse_right], y in [y_buse_bottom, y_ink_top]
     boxToCell
     {
-        box (-0.00015 0.000188 -1) (0.00015 0.000378 1);
+        box ($x_buse_left_m $y_buse_bottom_m -1) ($x_buse_right_m $y_ink_top_m 1);
         fieldValues
         (
-            volScalarFieldValue alpha.water 1  // Ink in nozzle
+            volScalarFieldValue alpha.water 1  // Ink in lower part of nozzle
         );
     }
 );
+
+// ************************************************************************* //

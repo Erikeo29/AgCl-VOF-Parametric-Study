@@ -14,13 +14,13 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+// ============================================================================
+// INCLUSION DU FICHIER CENTRAL DE PARAMETRES
+// ============================================================================
+#include "../system/parameters"
+
 // Non-Newtonian ink (water) phase with Bird-Carreau rheology
-// Source: base_parameters.yaml → rheology.*
-// Default parameters (GUI will modify these based on user input):
-//   η₀ = 1.5 Pa·s (zero-shear viscosity)
-//   η∞ = 0.001 Pa·s (infinite-shear viscosity)
-//   λ = 0.1 s (relaxation time)
-//   n = 0.5 (power-law index, <1 means shear-thinning)
+// Parametres lus depuis system/parameters
 
 simulationType  laminar;
 
@@ -30,20 +30,16 @@ laminar
     viscosityModel  BirdCarreau;
 
     // Zero-shear viscosity: nu0 = η₀ / ρ_ink
-    // Default: nu0 = 1.5 / 3000 = 5.0e-4 m²/s
-    nu0             5.0e-04;
+    nu0             $nu_0;
 
     // Infinite-shear viscosity: nuInf = η∞ / ρ_ink
-    // Default: nuInf = 0.001 / 3000 = 3.33e-7 m²/s
-    nuInf           3.33e-07;
+    nuInf           $nu_inf;
 
     // Time constant: k = λ (relaxation time)
-    // Default: k = 0.1 s
-    k               0.1;
+    k               $k_carreau;
 
     // Power-law index: n (shear-thinning behavior, n < 1)
-    // Default: n = 0.5
-    n               0.5;
+    n               $n_carreau;
 }
 
 // ************************************************************************* //

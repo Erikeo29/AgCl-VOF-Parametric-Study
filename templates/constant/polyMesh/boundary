@@ -20,102 +20,102 @@ FoamFile
     {
         type            empty;
         inGroups        List<word> 1(empty);
-        nFaces          17600;
-        startFace       34712;
+        nFaces          16880;
+        startFace       33300;
     }
     back
     {
         type            empty;
         inGroups        List<word> 1(empty);
-        nFaces          17600;
-        startFace       52312;
+        nFaces          16880;
+        startFace       50180;
     }
     substrate
     {
         type            wall;
         inGroups        List<word> 1(wall);
         nFaces          160;
-        startFace       69912;
+        startFace       67060;
     }
     wall_isolant_left
     {
         type            wall;
         inGroups        List<word> 1(wall);
         nFaces          26;
-        startFace       70072;
+        startFace       67220;
     }
     wall_isolant_right
     {
         type            wall;
         inGroups        List<word> 1(wall);
         nFaces          26;
-        startFace       70098;
+        startFace       67246;
     }
     top_isolant_left
     {
         type            wall;
         inGroups        List<word> 1(wall);
         nFaces          80;
-        startFace       70124;
+        startFace       67272;
     }
     top_isolant_right
     {
         type            wall;
         inGroups        List<word> 1(wall);
         nFaces          80;
-        startFace       70204;
+        startFace       67352;
     }
     wall_buse_left_int
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          88;
-        startFace       70284;
+        nFaces          68;
+        startFace       67432;
     }
     wall_buse_left_ext
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          24;
-        startFace       70372;
+        nFaces          16;
+        startFace       67500;
     }
     wall_buse_right_int
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          88;
-        startFace       70396;
+        nFaces          68;
+        startFace       67516;
     }
     wall_buse_right_ext
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          24;
-        startFace       70484;
+        nFaces          16;
+        startFace       67584;
     }
     inlet
     {
         type            patch;
         nFaces          60;
-        startFace       70508;
+        startFace       67600;
     }
     atmosphere
     {
         type            patch;
         nFaces          260;
-        startFace       70568;
+        startFace       67660;
     }
     outlet_left
     {
         type            patch;
         nFaces          30;
-        startFace       70828;
+        startFace       67920;
     }
     outlet_right
     {
         type            patch;
         nFaces          30;
-        startFace       70858;
+        startFace       67950;
     }
 )
 

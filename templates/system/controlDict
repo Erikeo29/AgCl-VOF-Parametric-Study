@@ -14,8 +14,14 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// Source: PARAMETERS_AgCl.md → Simulation Parameters
-// v5: New geometry v3 (clean), refined mesh (40k cells), gravity enabled
+// ============================================================================
+// INCLUSION DU FICHIER CENTRAL DE PARAMETRES
+// ============================================================================
+#include "parameters"
+
+// ============================================================================
+// CONFIGURATION DU SOLVEUR
+// ============================================================================
 
 application     interFoam;
 
@@ -23,18 +29,16 @@ startFrom       startTime;
 startTime       0;
 
 stopAt          endTime;
+endTime         $endTime;
 
-// SIM49: 400ms total - dispense 30ms + spreading 370ms
-endTime  0.3;
-
-deltaT          1e-06;          // Reduced 10x for VOF stability at very low inlet velocity
+deltaT          $deltaT;
 
 writeControl    adjustableRunTime;
-writeInterval   0.005;  // Write every 5 milliseconds
+writeInterval   $writeInterval;
 
 purgeWrite      0;
 
-writeFormat     ascii;  // ASCII for easy inspection
+writeFormat     ascii;
 writePrecision  6;
 writeCompression off;
 
@@ -43,11 +47,11 @@ timePrecision   6;
 
 runTimeModifiable yes;
 
-// Courant constraint for VOF stability (PARAMETERS_AgCl.md criterion: Co < 0.3)
+// Courant constraint for VOF stability
 adjustTimeStep  yes;
 
-maxCo           0.3;
-maxAlphaCo      0.3;
-maxDeltaT       1e-3;
+maxCo           $maxCo;
+maxAlphaCo      $maxAlphaCo;
+maxDeltaT       $maxDeltaT;
 
 // ************************************************************************* //
