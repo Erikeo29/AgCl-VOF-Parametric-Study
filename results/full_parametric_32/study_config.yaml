@@ -1,0 +1,35 @@
+# Extension étude paramétrique - CA_top_isolant_left = 15°
+# Date: 2025-12-29
+#
+# 16 combinaisons supplémentaires (run_033 à run_048)
+# CA_top_isolant_left fixé à 15° (hydrophile)
+
+name: full_parametric_32
+description: "Extension avec CA_top_isolant_left=15° - 16 combinaisons"
+
+# Mode grille
+sweep_type: grid
+
+# Numérotation à partir de 33
+start_index: 33
+
+sweep:
+  parameters:
+    - name: contact_angles.wall_isolant_left
+      values: [30, 60]
+
+    - name: contact_angles.top_isolant_left
+      values: [15]  # Fixé à 15°
+
+    - name: rheology.eta0
+      values: [0.5, 1.5]
+
+    - name: rheology.eta_inf
+      values: [0.001, 0.1]
+
+    - name: geometry.ratio_surface
+      values: [0.8, 1.2]
+
+# Configuration exécution
+execution:
+  timeout: 7200

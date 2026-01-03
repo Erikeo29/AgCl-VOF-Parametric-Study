@@ -1,0 +1,178 @@
+[
+  {
+    "run": "run_033_wall_isolant_left30_top_isolant_left15_eta00.5_eta_inf0.001_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_034_wall_isolant_left30_top_isolant_left15_eta00.5_eta_inf0.001_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_035_wall_isolant_left30_top_isolant_left15_eta00.5_eta_inf0.1_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_036_wall_isolant_left30_top_isolant_left15_eta00.5_eta_inf0.1_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_037_wall_isolant_left30_top_isolant_left15_eta01.5_eta_inf0.001_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_038_wall_isolant_left30_top_isolant_left15_eta01.5_eta_inf0.001_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_039_wall_isolant_left30_top_isolant_left15_eta01.5_eta_inf0.1_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_040_wall_isolant_left30_top_isolant_left15_eta01.5_eta_inf0.1_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 30,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_041_wall_isolant_left60_top_isolant_left15_eta00.5_eta_inf0.001_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_042_wall_isolant_left60_top_isolant_left15_eta00.5_eta_inf0.001_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_043_wall_isolant_left60_top_isolant_left15_eta00.5_eta_inf0.1_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_044_wall_isolant_left60_top_isolant_left15_eta00.5_eta_inf0.1_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 0.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_045_wall_isolant_left60_top_isolant_left15_eta01.5_eta_inf0.001_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_046_wall_isolant_left60_top_isolant_left15_eta01.5_eta_inf0.001_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.001,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_047_wall_isolant_left60_top_isolant_left15_eta01.5_eta_inf0.1_ratio_surface0.8",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 0.8
+    },
+    "status": "OK"
+  },
+  {
+    "run": "run_048_wall_isolant_left60_top_isolant_left15_eta01.5_eta_inf0.1_ratio_surface1.2",
+    "parameters": {
+      "contact_angles.wall_isolant_left": 60,
+      "contact_angles.top_isolant_left": 15,
+      "rheology.eta0": 1.5,
+      "rheology.eta_inf": 0.1,
+      "geometry.ratio_surface": 1.2
+    },
+    "status": "OK"
+  }
+]
