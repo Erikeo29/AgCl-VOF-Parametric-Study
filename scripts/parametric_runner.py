@@ -21,6 +21,9 @@ from pathlib import Path
 from datetime import datetime
 import json
 
+# Import centralized parameters reader
+from openfoam_params import read_parameters, get_rho_ink
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
@@ -59,98 +62,94 @@ class ParameterModifier:
             self._modify_control_dict(param, value)
         elif section == 'process':
             self._modify_process(param, value)
+        elif section == 'geometry':
+            self._modify_geometry(param, value)
         else:
             print(f"Warning: Section '{section}' non supportée")
     
     def _modify_transport_properties(self, param: str, value):
-        """Modifie les fichiers de rhéologie OpenFOAM 13.
+        """Modifie les paramètres de rhéologie dans system/parameters.
 
-        OpenFOAM 13 avec incompressibleVoF utilise:
-        - constant/momentumTransport.water → modèle BirdCarreau (nu0, nuInf, k, n)
-        - constant/physicalProperties.water → viscosité de base (nu)
+        Le template momentumTransport.water utilise #include et des variables
+        $nu_0, $nu_inf, etc. On modifie donc le fichier parameters.
 
         IMPORTANT: Conversion viscosité dynamique → cinématique
         - eta0, eta_inf sont en Pa·s (viscosité dynamique)
         - OpenFOAM attend nu0, nuInf, nu en m²/s (viscosité cinématique)
-        - Conversion: nu = eta / rho (avec rho = 3000 kg/m³ pour encre Ag/AgCl)
+        - Conversion: nu = eta / rho (rho lu depuis system/parameters)
         """
         import re
 
-        # Densité de l'encre Ag/AgCl (kg/m³)
-        RHO_INK = 3000.0
+        # Densité de l'encre (lue depuis parameters)
+        RHO_INK = get_rho_ink()
 
-        # Mapping des paramètres Carreau
+        # Mapping vers les noms de variables dans parameters
         param_map = {
-            'eta0': 'nu0',
-            'eta_inf': 'nuInf',
-            'lambda': 'k',
-            'n': 'n'
+            'eta0': ('eta_0', 'nu_0'),      # (param dynamique, param cinématique)
+            'eta_inf': ('eta_inf', 'nu_inf'),
+            'lambda': ('k_carreau', None),
+            'n': ('n_carreau', None)
         }
 
-        of_param = param_map.get(param, param)
+        if param not in param_map:
+            print(f"  ⚠ Paramètre rhéologique '{param}' non supporté")
+            return
 
-        # Conversion pour les viscosités (Pa·s → m²/s)
-        if param in ['eta0', 'eta_inf']:
+        eta_param, nu_param = param_map[param]
+
+        # Fichier parameters
+        params_file = self.case_dir / "system" / "parameters"
+        if not params_file.exists():
+            print(f"  ⚠ system/parameters non trouvé")
+            return
+
+        content = params_file.read_text()
+
+        # Modifier la viscosité dynamique (eta)
+        pattern = rf'^({eta_param}\s+)([\d.eE+-]+)(\s*;)'
+        new_content = re.sub(pattern, rf'\g<1>{value}\3', content, flags=re.MULTILINE)
+
+        # Si c'est une viscosité, calculer et modifier aussi la version cinématique
+        if nu_param:
             nu_value = value / RHO_INK
             print(f"  → Conversion: η = {value} Pa·s → ν = {nu_value:.6e} m²/s (ρ = {RHO_INK} kg/m³)")
-            formatted_value = f"{nu_value:.6e}"
+
+            pattern = rf'^({nu_param}\s+)([\d.eE+-]+)(\s*;)'
+            new_content = re.sub(pattern, rf'\g<1>{nu_value:.6e}\3', new_content, flags=re.MULTILINE)
+
+            print(f"  ✓ {eta_param} = {value} Pa·s, {nu_param} = {nu_value:.6e} m²/s dans parameters")
         else:
-            formatted_value = str(value)
+            print(f"  ✓ {eta_param} = {value} dans parameters")
 
-        # =====================================================================
-        # 1. Modifier momentumTransport.water (fichier principal pour Carreau)
-        # =====================================================================
-        momentum_file = self.case_dir / "constant" / "momentumTransport.water"
-        if momentum_file.exists():
-            content = momentum_file.read_text()
-            pattern = rf'({of_param}\s+)[^;]+(;)'
-            new_content = re.sub(pattern, rf'\g<1>{formatted_value}\2', content)
-            momentum_file.write_text(new_content)
-            print(f"  ✓ {of_param} = {formatted_value} dans momentumTransport.water")
-        else:
-            print(f"  ⚠ momentumTransport.water non trouvé")
-
-        # =====================================================================
-        # 2. Modifier physicalProperties.water (viscosité de base nu)
-        # =====================================================================
-        if param == 'eta0':
-            phys_file = self.case_dir / "constant" / "physicalProperties.water"
-            if phys_file.exists():
-                content = phys_file.read_text()
-                pattern = r'(nu\s+)[^;]+(;)'
-                new_content = re.sub(pattern, rf'\g<1>{formatted_value}\2', content)
-                phys_file.write_text(new_content)
-                print(f"  ✓ nu = {formatted_value} dans physicalProperties.water")
-
-        # =====================================================================
-        # 3. Modifier transportProperties (rétrocompatibilité)
-        # =====================================================================
-        transport_file = self.case_dir / "constant" / "transportProperties"
-        if transport_file.exists():
-            content = transport_file.read_text()
-            pattern = rf'({of_param}\s+)[^;]+(;)'
-            new_content = re.sub(pattern, rf'\g<1>{formatted_value}\2', content)
-            transport_file.write_text(new_content)
-            print(f"  ✓ {of_param} = {formatted_value} dans transportProperties")
+        params_file.write_text(new_content)
     
     def _modify_alpha_water(self, surface: str, angle: float):
-        """Modifie 0/alpha.water pour les angles de contact."""
-        file_path = self.case_dir / "0" / "alpha.water"
+        """Modifie system/parameters pour les angles de contact.
+
+        Les angles sont definis dans parameters avec CA_<surface> et
+        references dans alpha.water via $CA_<surface>.
+        """
+        file_path = self.case_dir / "system" / "parameters"
         if not file_path.exists():
             print(f"Warning: {file_path} not found")
             return
-        
+
         content = file_path.read_text()
-        
-        # Chercher le bloc de la surface et modifier theta0
+
+        # Le parametre dans parameters est CA_<surface>
+        param_name = f"CA_{surface}"
+
         import re
-        # Pattern pour trouver theta0 dans le bloc de la surface
-        pattern = rf'({surface}\s*\{{[^}}]*theta0\s+)\d+(\s*;[^}}]*\}})'
+        # Pattern pour trouver CA_xxx suivi d'une valeur numerique
+        pattern = rf'^({param_name}\s+)\d+(\s*;.*?)$'
         replacement = rf'\g<1>{int(angle)}\2'
-        new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
-        
-        file_path.write_text(new_content)
-        print(f"  ✓ {surface} theta0 = {angle}° dans alpha.water")
+        new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+
+        if new_content != content:
+            file_path.write_text(new_content)
+            print(f"  ✓ {param_name} = {int(angle)}° dans parameters")
+        else:
+            print(f"  ⚠ {param_name} non trouve dans parameters")
     
     def _modify_surface_tension(self, param: str, value):
         """Modifie la tension de surface."""
@@ -187,6 +186,161 @@ class ParameterModifier:
         elif param == 'dispense_time':
             # Modifier setFieldsDict ou autre selon implémentation
             print(f"  ⚠ dispense_time: modification manuelle requise")
+
+    def _modify_geometry(self, param: str, value):
+        """Modifie les paramètres géométriques dans system/parameters.
+
+        Quand on modifie y_buse, on doit aussi recalculer:
+        - y_buse_top = y_buse_bottom + y_buse
+        - y_buse_top_m = y_buse_top * 1e-3
+        - y_ink = y_buse (buse 100% remplie)
+        - y_ink_top = y_buse_top
+        - y_ink_top_m = y_buse_top_m
+
+        Pour ratio_surface, on calcule y_buse à partir du ratio:
+        - S_puit = x_puit * y_puit = 0.8 * 0.128 = 0.1024 mm²
+        - y_buse = ratio * S_puit / x_buse
+        """
+        import re
+
+        params_file = self.case_dir / "system" / "parameters"
+        if not params_file.exists():
+            print(f"  ⚠ system/parameters non trouvé")
+            return
+
+        content = params_file.read_text()
+
+        # Cas spécial: ratio_surface → calculer y_buse
+        if param == 'ratio_surface':
+            # Constantes géométriques
+            S_PUIT = 0.8 * 0.128  # mm² = 0.1024
+            X_BUSE = 0.3  # mm
+
+            y_buse = value * S_PUIT / X_BUSE
+            print(f"  → ratio_surface = {value} → y_buse = {y_buse:.3f} mm")
+
+            # Modifier ratio_surface
+            new_content = re.sub(
+                r'^(ratio_surface\s+)([\d.eE+-]+)(\s*;)',
+                rf'\g<1>{value}\3',
+                content,
+                flags=re.MULTILINE
+            )
+
+            # Modifier y_buse et dérivées
+            new_content = re.sub(
+                r'^(y_buse\s+)([\d.eE+-]+)(\s*;)',
+                rf'\g<1>{y_buse:.3f}\3',
+                new_content,
+                flags=re.MULTILINE
+            )
+
+            # Lire y_buse_bottom pour calculer les positions
+            match = re.search(r'^y_buse_bottom\s+([\d.eE+-]+)\s*;', new_content, re.MULTILINE)
+            if match:
+                y_buse_bottom = float(match.group(1))
+                y_buse_top = y_buse_bottom + y_buse
+                y_buse_top_m = y_buse_top * 0.001
+
+                # y_buse_top
+                new_content = re.sub(
+                    r'^(y_buse_top\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top:.3f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+                # y_buse_top_m
+                new_content = re.sub(
+                    r'^(y_buse_top_m\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top_m:.6f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+                # y_ink = y_buse (100% remplie)
+                new_content = re.sub(
+                    r'^(y_ink\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse:.3f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+                # y_ink_top = y_buse_top
+                new_content = re.sub(
+                    r'^(y_ink_top\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top:.3f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+                # y_ink_top_m = y_buse_top_m
+                new_content = re.sub(
+                    r'^(y_ink_top_m\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top_m:.6f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+
+                print(f"  ✓ ratio={value} → y_buse={y_buse:.3f}mm, y_ink={y_buse:.3f}mm, y_buse_top={y_buse_top:.3f}mm")
+
+            params_file.write_text(new_content)
+            return
+
+        # Modifier le paramètre demandé (capture uniquement la valeur numérique)
+        pattern = rf'(^{param}\s+)([\d.eE+-]+)(\s*;)'
+        new_content = re.sub(pattern, rf'\g<1>{value}\3', content, flags=re.MULTILINE)
+
+        # Si c'est y_buse, recalculer les valeurs dérivées
+        if param == 'y_buse':
+            # Lire y_buse_bottom depuis le fichier (valeur numérique uniquement)
+            match = re.search(r'^y_buse_bottom\s+([\d.eE+-]+)\s*;', new_content, re.MULTILINE)
+            if match:
+                y_buse_bottom = float(match.group(1))
+                y_buse_top = y_buse_bottom + value
+                y_buse_top_m = y_buse_top * 0.001  # mm to m
+
+                # Mettre à jour y_buse_top
+                new_content = re.sub(
+                    r'^(y_buse_top\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top:.3f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+
+                # Mettre à jour y_buse_top_m
+                new_content = re.sub(
+                    r'^(y_buse_top_m\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top_m:.6f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+
+                # Mettre à jour y_ink = y_buse (100% remplie)
+                new_content = re.sub(
+                    r'^(y_ink\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{value:.3f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+                # y_ink_top = y_buse_top
+                new_content = re.sub(
+                    r'^(y_ink_top\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top:.3f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+                # y_ink_top_m = y_buse_top_m
+                new_content = re.sub(
+                    r'^(y_ink_top_m\s+)([\d.eE+-]+)(\s*;)',
+                    rf'\g<1>{y_buse_top_m:.6f}\3',
+                    new_content,
+                    flags=re.MULTILINE
+                )
+
+                print(f"  ✓ y_buse = {value} mm → y_buse_top = {y_buse_top:.3f} mm, y_ink = {value} mm")
+            else:
+                print(f"  ✓ y_buse = {value} mm (y_buse_bottom non trouvé, dérivées non calculées)")
+        else:
+            print(f"  ✓ {param} = {value} dans parameters")
+
+        params_file.write_text(new_content)
 
 
 # =============================================================================
@@ -274,102 +428,187 @@ postprocessing:
         print(f"✅ Étude créée: {study_file}")
         print(f"   Éditez ce fichier pour configurer votre étude.")
     
+    def _generate_grid_combinations(self, parameters: list) -> list:
+        """Génère toutes les combinaisons pour un grid sweep.
+
+        Args:
+            parameters: Liste de dicts avec 'name' et 'values'
+
+        Returns:
+            Liste de dicts avec toutes les combinaisons
+        """
+        from itertools import product
+
+        # Extraire les noms et valeurs
+        names = [p['name'] for p in parameters]
+        value_lists = [p['values'] for p in parameters]
+
+        # Générer toutes les combinaisons
+        combinations = []
+        for combo in product(*value_lists):
+            combinations.append(dict(zip(names, combo)))
+
+        return combinations
+
+    def _make_run_name(self, index: int, params: dict) -> str:
+        """Crée un nom de run lisible à partir des paramètres."""
+        parts = [f"run_{index:03d}"]
+        for key, value in params.items():
+            short_key = key.split('.')[-1]
+            # Formater la valeur
+            if isinstance(value, float):
+                if value == int(value):
+                    val_str = str(int(value))
+                else:
+                    val_str = str(value)
+            else:
+                val_str = str(value)
+            parts.append(f"{short_key}{val_str}")
+        return "_".join(parts)
+
     def run_study(self, study_name: str, dry_run: bool = False):
-        """Exécute une étude paramétrique."""
+        """Exécute une étude paramétrique (simple ou grid)."""
         study_file = CONFIG_DIR / "studies" / f"{study_name}.yaml"
-        
+
         if not study_file.exists():
             print(f"❌ Étude non trouvée: {study_file}")
             return
-        
+
         with open(study_file) as f:
             config = yaml.safe_load(f)
-        
+
         sweep = config.get('sweep', {})
-        param_path = sweep.get('parameter')
-        values = sweep.get('values', [])
-        
-        if not param_path or not values:
-            print("❌ Configuration sweep invalide")
-            return
-        
+        sweep_type = config.get('sweep_type', 'simple')
+        start_index = config.get('start_index', 1)  # Support continuation
+
+        # Déterminer le type de sweep
+        if sweep_type == 'grid' or 'parameters' in sweep:
+            # Grid sweep multi-paramètres
+            parameters = sweep.get('parameters', [])
+            if not parameters:
+                print("❌ Configuration grid sweep invalide: 'parameters' manquant")
+                return
+
+            combinations = self._generate_grid_combinations(parameters)
+            param_names = [p['name'] for p in parameters]
+
+            print(f"\n=== ÉTUDE GRID: {study_name} ===")
+            print(f"Type: Grid sweep multi-paramètres")
+            print(f"Paramètres: {param_names}")
+            for p in parameters:
+                print(f"  - {p['name']}: {p['values']}")
+            print(f"Combinaisons: {len(combinations)}")
+            if start_index > 1:
+                print(f"Index début: {start_index} (run_{start_index:03d} à run_{start_index + len(combinations) - 1:03d})")
+
+        else:
+            # Simple sweep (rétrocompatibilité)
+            param_path = sweep.get('parameter')
+            values = sweep.get('values', [])
+
+            if not param_path or not values:
+                print("❌ Configuration sweep invalide")
+                return
+
+            combinations = [{param_path: v} for v in values]
+            param_names = [param_path]
+
+            print(f"\n=== ÉTUDE: {study_name} ===")
+            print(f"Paramètre: {param_path}")
+            print(f"Valeurs: {values}")
+
+        print(f"Simulations: {len(combinations)}")
+        print()
+
         # Créer dossier résultats pour cette étude
-        study_results = RESULTS_DIR / study_name
+        # Utilise output_dir ou name du config si spécifié, sinon nom du fichier
+        output_name = config.get('output_dir', config.get('name', study_name))
+        study_results = RESULTS_DIR / output_name
         study_results.mkdir(exist_ok=True)
-        
+
         # Sauvegarder la config
         shutil.copy(study_file, study_results / "study_config.yaml")
-        
-        print(f"\n=== ÉTUDE: {study_name} ===")
-        print(f"Paramètre: {param_path}")
-        print(f"Valeurs: {values}")
-        print(f"Simulations: {len(values)}")
-        print()
-        
+
         results_summary = []
-        
-        for i, value in enumerate(values, 1):
-            run_name = f"run_{i:03d}_{param_path.split('.')[-1]}_{value}"
+
+        for i, params in enumerate(combinations, start_index):
+            run_name = self._make_run_name(i, params)
             run_dir = study_results / run_name
-            
-            print(f"\n--- Simulation {i}/{len(values)}: {param_path} = {value} ---")
-            
+
+            print(f"\n--- Simulation {i}/{start_index + len(combinations) - 1} ---")
+            for key, val in params.items():
+                print(f"  {key} = {val}")
+
             if dry_run:
                 print(f"  [DRY RUN] Créerait: {run_dir}")
+                results_summary.append({
+                    'run': run_name,
+                    'parameters': params,
+                    'status': 'DRY_RUN'
+                })
                 continue
-            
+
             # Copier les templates
             if run_dir.exists():
                 shutil.rmtree(run_dir)
-            
+
             shutil.copytree(TEMPLATES_DIR / "0", run_dir / "0")
             shutil.copytree(TEMPLATES_DIR / "constant", run_dir / "constant")
             shutil.copytree(TEMPLATES_DIR / "system", run_dir / "system")
-            
-            # Modifier le paramètre
+
+            # Modifier TOUS les paramètres du sweep
             modifier = ParameterModifier(run_dir)
-            modifier.set_parameter(param_path, value)
-            
+            for param_path, value in params.items():
+                modifier.set_parameter(param_path, value)
+
+            # Appliquer les overrides (end_time, writeInterval, etc.)
+            overrides = config.get('overrides', {})
+            for section, section_params in overrides.items():
+                for param, value in section_params.items():
+                    full_path = f"{section}.{param}"
+                    print(f"  [override] {full_path} = {value}")
+                    modifier.set_parameter(full_path, value)
+
             # Lancer la simulation
-            print(f"  Lancement simulation...")
+            print(f"  Génération maillage (blockMesh)...")
+            print(f"  Initialisation champ alpha (setFields)...")
             log_file = run_dir / "run.log"
-            
+
             try:
-                # Source OpenFOAM et lancer
-                cmd = f"source /opt/openfoam13/etc/bashrc && cd {run_dir} && foamRun -solver incompressibleVoF > run.log 2>&1"
+                # Source OpenFOAM, blockMesh (regénère le maillage), setFields puis foamRun
+                cmd = f"source /opt/openfoam13/etc/bashrc && cd {run_dir} && blockMesh > blockMesh.log 2>&1 && setFields > setFields.log 2>&1 && foamRun -solver incompressibleVoF > run.log 2>&1"
                 result = subprocess.run(
                     cmd,
                     shell=True,
                     executable='/bin/bash',
                     timeout=config.get('execution', {}).get('timeout', 3600)
                 )
-                
+
                 if result.returncode == 0:
                     print(f"  ✅ Simulation terminée")
                     status = "OK"
                 else:
                     print(f"  ❌ Erreur (code {result.returncode})")
                     status = "ERROR"
-                    
+
             except subprocess.TimeoutExpired:
                 print(f"  ⏱️ Timeout")
                 status = "TIMEOUT"
             except Exception as e:
                 print(f"  ❌ Exception: {e}")
                 status = "EXCEPTION"
-            
+
             results_summary.append({
                 'run': run_name,
-                'parameter': param_path,
-                'value': value,
+                'parameters': params,
                 'status': status
             })
-        
+
         # Sauvegarder le résumé
         summary_file = study_results / "summary.json"
         with open(summary_file, 'w') as f:
             json.dump(results_summary, f, indent=2)
-        
+
         print(f"\n=== ÉTUDE TERMINÉE ===")
         print(f"Résultats: {study_results}")
         print(f"Résumé: {summary_file}")

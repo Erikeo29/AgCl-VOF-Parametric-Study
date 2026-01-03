@@ -14,166 +14,197 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// GEOMETRIE 2D COMPLETE (sans symétrie) - 15 blocs
-//
-// Pour permettre des angles de contact différents gauche/droite
+// ============================================================================
+// INCLUSION DU FICHIER CENTRAL DE PARAMETRES
+// ============================================================================
+#include "parameters"
+
+// ============================================================================
+// GEOMETRIE 2D COMPLETE - 16 blocs
+// Toutes les dimensions proviennent du fichier "parameters"
+// ============================================================================
 //
 // Vue 2D (coupe):
 //
-//  x=-0.8   x=-0.4  x=-0.15   x=0   x=0.15   x=0.4    x=0.8
-//    |        |        |       |       |        |        |
-//    |        |        +===INLET===+   |        |        |  y=0.588
-//    |        |        |   BUSE    |   |        |        |
-//    |        |        |  (bloc14) |   |        |        |  y=0.278
-//    +--------+--------+-----+-----+---+--------+--------+
-//    | AIR 10 | AIR 11 |AIR12|AIR13|   |  AIR 5 | AIR 6  |  y=0.188
-//    +--------+--------+-----+-----+---+--------+--------+
-//    | AIR 7  |  AIR 8 |AIR 9| AIR2|   |  AIR 3 | AIR 4  |  y=0.128
-//    +--------+--------+-----+-----+---+--------+--------+
-//    |ISOLANT | PUIT   |PUIT | PUIT|   |  PUIT  |ISOLANT |
-//    |  (-)   |  (-)   | (-) | (0) |   |  (1)   |  (-)   |  y=0
-//    +--------+--------+-----+-----+---+--------+--------+
+//  x=-isolant  x=-puit/2  x=-buse/2  x=0  x=buse/2  x=puit/2  x=isolant
+//    |           |           |       |       |         |          |
+//    |           |           +=====INLET=====+         |          |  y=buse_top
+//    |           |           |     BUSE      |         |          |
+//    |           |           |               |         |          |  y=air_top
+//    +-----------+-----------+-------+-------+---------+----------+
+//    |   AIR     |    AIR    |  AIR  |  AIR  |   AIR   |   AIR    |  y=buse_bottom
+//    +-----------+-----------+-------+-------+---------+----------+
+//    |   AIR     |    AIR    |  AIR  |  AIR  |   AIR   |   AIR    |  y=puit
+//    +-----------+-----------+-------+-------+---------+----------+
+//    | ISOLANT   |   PUIT    | PUIT  | PUIT  |  PUIT   | ISOLANT  |
+//    |    (-)    |    (-)    |  (-)  |  (0)  |   (1)   |    (-)   |  y=0
+//    +-----------+-----------+-------+-------+---------+----------+
 //
-// Condition initiale:
-//   - Bloc 14 (buse): alpha = 1 (encre)
-//   - Tous autres blocs: alpha = 0 (air)
 
 scale   0.001;  // mm to m
+
+// ============================================================================
+// Variables locales derivees des parametres
+// ============================================================================
+
+// Positions X negatives
+nx_isolant      #calc "-$x_isolant";
+nx_puit_half    #calc "-$x_puit_half";
+
+// Positions X de la buse (avec decalage x_gap_buse)
+// x_gap_buse = 0 : buse centree
+// x_gap_buse < 0 : buse decalee vers la gauche
+x_buse_left     #calc "-$x_buse_half + $x_gap_buse";
+x_buse_right    #calc "$x_buse_half + $x_gap_buse";
+
+// Nombre de cellules (resolution ~5 um)
+// Puit centre: x_buse_half / cell_size * 1000 = 0.15 / 5 * 1000 = 30
+n_puit_centre   30;
+// Puit lateral: (x_puit_half - x_buse_half) / cell_size * 1000 = 0.25 / 5 * 1000 = 50
+n_puit_lateral  50;
+// Isolant: (x_isolant - x_puit_half) / cell_size * 1000 = 0.4 / 5 * 1000 = 80
+n_isolant       80;
+// Puit Y: y_puit / cell_size * 1000 = 0.128 / 5 * 1000 = 26
+n_puit_y        26;
+// Gap Y: y_gap / cell_size * 1000 = 0.070 / 5 * 1000 = 14
+n_gap_y         14;
+// Air Y: y_air / cell_size * 1000 = 0.080 / 5 * 1000 = 16
+n_air_y         16;
+// Buse Y: y_buse / cell_size * 1000 = 0.341 / 5 * 1000 = 68
+n_buse_y        68;
 
 vertices
 (
     // === Niveau y=0 (substrat) ===
     // Gauche
-    (-0.8    0.0     0.0)     // 0  - isolant gauche
-    (-0.4    0.0     0.0)     // 1
-    (-0.15   0.0     0.0)     // 2
+    ($nx_isolant    0.0             0.0)     // 0  - isolant gauche
+    ($nx_puit_half  0.0             0.0)     // 1
+    ($x_buse_left   0.0             0.0)     // 2  - bord gauche buse (avec decalage)
     // Centre et droite
-    (0.0     0.0     0.0)     // 3
-    (0.15    0.0     0.0)     // 4
-    (0.4     0.0     0.0)     // 5
-    (0.8     0.0     0.0)     // 6  - isolant droite
+    (0.0            0.0             0.0)     // 3
+    ($x_buse_right  0.0             0.0)     // 4  - bord droit buse (avec decalage)
+    ($x_puit_half   0.0             0.0)     // 5
+    ($x_isolant     0.0             0.0)     // 6  - isolant droite
     // z=0.1
-    (-0.8    0.0     0.1)     // 7
-    (-0.4    0.0     0.1)     // 8
-    (-0.15   0.0     0.1)     // 9
-    (0.0     0.0     0.1)     // 10
-    (0.15    0.0     0.1)     // 11
-    (0.4     0.0     0.1)     // 12
-    (0.8     0.0     0.1)     // 13
+    ($nx_isolant    0.0             0.1)     // 7
+    ($nx_puit_half  0.0             0.1)     // 8
+    ($x_buse_left   0.0             0.1)     // 9
+    (0.0            0.0             0.1)     // 10
+    ($x_buse_right  0.0             0.1)     // 11
+    ($x_puit_half   0.0             0.1)     // 12
+    ($x_isolant     0.0             0.1)     // 13
 
-    // === Niveau y=0.128 (haut puit / bas gap) ===
-    (-0.8    0.128   0.0)     // 14
-    (-0.4    0.128   0.0)     // 15
-    (-0.15   0.128   0.0)     // 16
-    (0.0     0.128   0.0)     // 17
-    (0.15    0.128   0.0)     // 18
-    (0.4     0.128   0.0)     // 19
-    (0.8     0.128   0.0)     // 20
+    // === Niveau y=y_puit (haut puit / bas gap) ===
+    ($nx_isolant    $y_puit         0.0)     // 14
+    ($nx_puit_half  $y_puit         0.0)     // 15
+    ($x_buse_left   $y_puit         0.0)     // 16
+    (0.0            $y_puit         0.0)     // 17
+    ($x_buse_right  $y_puit         0.0)     // 18
+    ($x_puit_half   $y_puit         0.0)     // 19
+    ($x_isolant     $y_puit         0.0)     // 20
     // z=0.1
-    (-0.8    0.128   0.1)     // 21
-    (-0.4    0.128   0.1)     // 22
-    (-0.15   0.128   0.1)     // 23
-    (0.0     0.128   0.1)     // 24
-    (0.15    0.128   0.1)     // 25
-    (0.4     0.128   0.1)     // 26
-    (0.8     0.128   0.1)     // 27
+    ($nx_isolant    $y_puit         0.1)     // 21
+    ($nx_puit_half  $y_puit         0.1)     // 22
+    ($x_buse_left   $y_puit         0.1)     // 23
+    (0.0            $y_puit         0.1)     // 24
+    ($x_buse_right  $y_puit         0.1)     // 25
+    ($x_puit_half   $y_puit         0.1)     // 26
+    ($x_isolant     $y_puit         0.1)     // 27
 
-    // === Niveau y=0.188 (bas buse / haut gap) - gap 60µm ===
-    (-0.8    0.188   0.0)     // 28
-    (-0.4    0.188   0.0)     // 29
-    (-0.15   0.188   0.0)     // 30
-    (0.0     0.188   0.0)     // 31
-    (0.15    0.188   0.0)     // 32
-    (0.4     0.188   0.0)     // 33
-    (0.8     0.188   0.0)     // 34
+    // === Niveau y=y_buse_bottom (bas buse / haut gap) ===
+    ($nx_isolant    $y_buse_bottom  0.0)     // 28
+    ($nx_puit_half  $y_buse_bottom  0.0)     // 29
+    ($x_buse_left   $y_buse_bottom  0.0)     // 30
+    (0.0            $y_buse_bottom  0.0)     // 31
+    ($x_buse_right  $y_buse_bottom  0.0)     // 32
+    ($x_puit_half   $y_buse_bottom  0.0)     // 33
+    ($x_isolant     $y_buse_bottom  0.0)     // 34
     // z=0.1
-    (-0.8    0.188   0.1)     // 35
-    (-0.4    0.188   0.1)     // 36
-    (-0.15   0.188   0.1)     // 37
-    (0.0     0.188   0.1)     // 38
-    (0.15    0.188   0.1)     // 39
-    (0.4     0.188   0.1)     // 40
-    (0.8     0.188   0.1)     // 41
+    ($nx_isolant    $y_buse_bottom  0.1)     // 35
+    ($nx_puit_half  $y_buse_bottom  0.1)     // 36
+    ($x_buse_left   $y_buse_bottom  0.1)     // 37
+    (0.0            $y_buse_bottom  0.1)     // 38
+    ($x_buse_right  $y_buse_bottom  0.1)     // 39
+    ($x_puit_half   $y_buse_bottom  0.1)     // 40
+    ($x_isolant     $y_buse_bottom  0.1)     // 41
 
-    // === Niveau y=0.278 (top air) ===
-    (-0.8    0.278   0.0)     // 42
-    (-0.4    0.278   0.0)     // 43
-    (-0.15   0.278   0.0)     // 44
-    (0.15    0.278   0.0)     // 45
-    (0.4     0.278   0.0)     // 46
-    (0.8     0.278   0.0)     // 47
+    // === Niveau y=y_air_top (top air) ===
+    ($nx_isolant    $y_air_top      0.0)     // 42
+    ($nx_puit_half  $y_air_top      0.0)     // 43
+    ($x_buse_left   $y_air_top      0.0)     // 44
+    ($x_buse_right  $y_air_top      0.0)     // 45
+    ($x_puit_half   $y_air_top      0.0)     // 46
+    ($x_isolant     $y_air_top      0.0)     // 47
     // z=0.1
-    (-0.8    0.278   0.1)     // 48
-    (-0.4    0.278   0.1)     // 49
-    (-0.15   0.278   0.1)     // 50
-    (0.15    0.278   0.1)     // 51
-    (0.4     0.278   0.1)     // 52
-    (0.8     0.278   0.1)     // 53
+    ($nx_isolant    $y_air_top      0.1)     // 48
+    ($nx_puit_half  $y_air_top      0.1)     // 49
+    ($x_buse_left   $y_air_top      0.1)     // 50
+    ($x_buse_right  $y_air_top      0.1)     // 51
+    ($x_puit_half   $y_air_top      0.1)     // 52
+    ($x_isolant     $y_air_top      0.1)     // 53
 
-    // === Niveau y=0.628 (top buse / inlet) - hauteur buse 0.44mm, gap 60µm ===
-    (-0.15   0.628   0.0)     // 54
-    (0.0     0.628   0.0)     // 55  <- NOUVEAU (centre)
-    (0.15    0.628   0.0)     // 56
-    (-0.15   0.628   0.1)     // 57
-    (0.0     0.628   0.1)     // 58  <- NOUVEAU (centre)
-    (0.15    0.628   0.1)     // 59
+    // === Niveau y=y_buse_top (top buse / inlet) ===
+    ($x_buse_left   $y_buse_top     0.0)     // 54
+    (0.0            $y_buse_top     0.0)     // 55  <- centre (note: centre geometrique, pas centre buse si decalee)
+    ($x_buse_right  $y_buse_top     0.0)     // 56
+    ($x_buse_left   $y_buse_top     0.1)     // 57
+    (0.0            $y_buse_top     0.1)     // 58
+    ($x_buse_right  $y_buse_top     0.1)     // 59
 );
 
 blocks
 (
-    // Résolution: ~5µm par cellule
+    // === PUIT (y: 0 -> y_puit) ===
+    // Bloc 0: PUIT centre-gauche
+    hex (2 3 17 16 9 10 24 23) puit ($n_puit_centre $n_puit_y 1) simpleGrading (1 1 1)
 
-    // === PUIT (y: 0→0.128) ===
-    // Bloc 0: PUIT centre-gauche (x: -0.15→0, y: 0→0.128)
-    hex (2 3 17 16 9 10 24 23) puit (30 26 1) simpleGrading (1 1 1)
+    // Bloc 1: PUIT centre-droite
+    hex (3 4 18 17 10 11 25 24) puit ($n_puit_centre $n_puit_y 1) simpleGrading (1 1 1)
 
-    // Bloc 1: PUIT centre-droite (x: 0→0.15, y: 0→0.128)
-    hex (3 4 18 17 10 11 25 24) puit (30 26 1) simpleGrading (1 1 1)
+    // Bloc 2: PUIT gauche
+    hex (1 2 16 15 8 9 23 22) puit ($n_puit_lateral $n_puit_y 1) simpleGrading (1 1 1)
 
-    // Bloc 2: PUIT gauche (x: -0.4→-0.15, y: 0→0.128)
-    hex (1 2 16 15 8 9 23 22) puit (50 26 1) simpleGrading (1 1 1)
+    // Bloc 3: PUIT droite
+    hex (4 5 19 18 11 12 26 25) puit ($n_puit_lateral $n_puit_y 1) simpleGrading (1 1 1)
 
-    // Bloc 3: PUIT droite (x: 0.15→0.4, y: 0→0.128)
-    hex (4 5 19 18 11 12 26 25) puit (50 26 1) simpleGrading (1 1 1)
-
-    // === AIR GAP (y: 0.128→0.188) - gap 60µm ===
+    // === AIR GAP (y: y_puit -> y_buse_bottom) ===
     // Bloc 4: AIR gap centre-gauche
-    hex (16 17 31 30 23 24 38 37) air (30 6 1) simpleGrading (1 1 1)
+    hex (16 17 31 30 23 24 38 37) air ($n_puit_centre $n_gap_y 1) simpleGrading (1 1 1)
 
     // Bloc 5: AIR gap centre-droite
-    hex (17 18 32 31 24 25 39 38) air (30 6 1) simpleGrading (1 1 1)
+    hex (17 18 32 31 24 25 39 38) air ($n_puit_centre $n_gap_y 1) simpleGrading (1 1 1)
 
     // Bloc 6: AIR gap gauche
-    hex (15 16 30 29 22 23 37 36) air (50 6 1) simpleGrading (1 1 1)
+    hex (15 16 30 29 22 23 37 36) air ($n_puit_lateral $n_gap_y 1) simpleGrading (1 1 1)
 
     // Bloc 7: AIR gap droite
-    hex (18 19 33 32 25 26 40 39) air (50 6 1) simpleGrading (1 1 1)
+    hex (18 19 33 32 25 26 40 39) air ($n_puit_lateral $n_gap_y 1) simpleGrading (1 1 1)
 
-    // Bloc 8: AIR gap extrême gauche (au-dessus isolant)
-    hex (14 15 29 28 21 22 36 35) air (80 6 1) simpleGrading (1 1 1)
+    // Bloc 8: AIR gap extreme gauche (au-dessus isolant)
+    hex (14 15 29 28 21 22 36 35) air ($n_isolant $n_gap_y 1) simpleGrading (1 1 1)
 
-    // Bloc 9: AIR gap extrême droite (au-dessus isolant)
-    hex (19 20 34 33 26 27 41 40) air (80 6 1) simpleGrading (1 1 1)
+    // Bloc 9: AIR gap extreme droite (au-dessus isolant)
+    hex (19 20 34 33 26 27 41 40) air ($n_isolant $n_gap_y 1) simpleGrading (1 1 1)
 
-    // === AIR HAUT (y: 0.188→0.278) ===
+    // === AIR HAUT (y: y_buse_bottom -> y_air_top) ===
     // Bloc 10: AIR haut gauche
-    hex (29 30 44 43 36 37 50 49) air (50 24 1) simpleGrading (1 1 1)
+    hex (29 30 44 43 36 37 50 49) air ($n_puit_lateral $n_air_y 1) simpleGrading (1 1 1)
 
     // Bloc 11: AIR haut droite
-    hex (32 33 46 45 39 40 52 51) air (50 24 1) simpleGrading (1 1 1)
+    hex (32 33 46 45 39 40 52 51) air ($n_puit_lateral $n_air_y 1) simpleGrading (1 1 1)
 
-    // Bloc 12: AIR haut extrême gauche
-    hex (28 29 43 42 35 36 49 48) air (80 24 1) simpleGrading (1 1 1)
+    // Bloc 12: AIR haut extreme gauche
+    hex (28 29 43 42 35 36 49 48) air ($n_isolant $n_air_y 1) simpleGrading (1 1 1)
 
-    // Bloc 13: AIR haut extrême droite
-    hex (33 34 47 46 40 41 53 52) air (80 24 1) simpleGrading (1 1 1)
+    // Bloc 13: AIR haut extreme droite
+    hex (33 34 47 46 40 41 53 52) air ($n_isolant $n_air_y 1) simpleGrading (1 1 1)
 
-    // === BUSE (y: 0.188→0.628) - hauteur 0.44mm, gap 60µm ===
-    // Bloc 14: BUSE gauche (x: -0.15→0, y: 0.188→0.628)
-    hex (30 31 55 54 37 38 58 57) buse (30 88 1) simpleGrading (1 1 1)
+    // === BUSE (y: y_buse_bottom -> y_buse_top) ===
+    // Bloc 14: BUSE gauche
+    hex (30 31 55 54 37 38 58 57) buse ($n_puit_centre $n_buse_y 1) simpleGrading (1 1 1)
 
-    // Bloc 15: BUSE droite (x: 0→0.15, y: 0.188→0.628)
-    hex (31 32 56 55 38 39 59 58) buse (30 88 1) simpleGrading (1 1 1)
+    // Bloc 15: BUSE droite
+    hex (31 32 56 55 38 39 59 58) buse ($n_puit_centre $n_buse_y 1) simpleGrading (1 1 1)
 );
 
 edges
@@ -212,8 +243,8 @@ boundary
             (28 42 43 29)
             (33 46 47 34)
             // Buse
-            (30 54 55 31)   // buse gauche
-            (31 55 56 32)   // buse droite
+            (30 54 55 31)
+            (31 55 56 32)
         );
     }
 
@@ -240,8 +271,8 @@ boundary
             (35 36 49 48)
             (40 41 53 52)
             // Buse
-            (37 58 57 38)   // buse gauche
-            (38 59 58 39)   // buse droite
+            (37 58 57 38)
+            (38 59 58 39)
         );
     }
 
@@ -251,14 +282,14 @@ boundary
         type wall;
         faces
         (
-            (2 9 10 3)      // puit centre-gauche
-            (3 10 11 4)     // puit centre-droite
-            (1 8 9 2)       // puit gauche
-            (4 11 12 5)     // puit droite
+            (2 9 10 3)
+            (3 10 11 4)
+            (1 8 9 2)
+            (4 11 12 5)
         );
     }
 
-    // === Paroi isolant GAUCHE (x=-0.4, y: 0→0.128) ===
+    // === Paroi isolant GAUCHE ===
     wall_isolant_left
     {
         type wall;
@@ -268,7 +299,7 @@ boundary
         );
     }
 
-    // === Paroi isolant DROITE (x=0.4, y: 0→0.128) ===
+    // === Paroi isolant DROITE ===
     wall_isolant_right
     {
         type wall;
@@ -278,7 +309,7 @@ boundary
         );
     }
 
-    // === Surface horizontale isolant GAUCHE (y=0.128, x: -0.8→-0.4) ===
+    // === Surface horizontale isolant GAUCHE ===
     top_isolant_left
     {
         type wall;
@@ -288,7 +319,7 @@ boundary
         );
     }
 
-    // === Surface horizontale isolant DROITE (y=0.128, x: 0.4→0.8) ===
+    // === Surface horizontale isolant DROITE ===
     top_isolant_right
     {
         type wall;
@@ -298,89 +329,89 @@ boundary
         );
     }
 
-    // === Paroi INTERIEURE de la buse GAUCHE (x=-0.15, côté encre) ===
+    // === Paroi INTERIEURE de la buse GAUCHE ===
     wall_buse_left_int
     {
         type wall;
         faces
         (
-            (30 37 57 54)   // paroi buse côté encre
+            (30 37 57 54)
         );
     }
 
-    // === Paroi EXTERIEURE de la buse GAUCHE (x=-0.15, côté air) ===
+    // === Paroi EXTERIEURE de la buse GAUCHE ===
     wall_buse_left_ext
     {
         type wall;
         faces
         (
-            (30 44 50 37)   // paroi buse côté air (extérieur)
+            (30 44 50 37)
         );
     }
 
-    // === Paroi INTERIEURE de la buse DROITE (x=0.15, côté encre) ===
+    // === Paroi INTERIEURE de la buse DROITE ===
     wall_buse_right_int
     {
         type wall;
         faces
         (
-            (32 39 59 56)   // paroi buse côté encre
+            (32 39 59 56)
         );
     }
 
-    // === Paroi EXTERIEURE de la buse DROITE (x=0.15, côté air) ===
+    // === Paroi EXTERIEURE de la buse DROITE ===
     wall_buse_right_ext
     {
         type wall;
         faces
         (
-            (32 45 51 39)   // paroi buse côté air (extérieur)
+            (32 45 51 39)
         );
     }
 
-    // === INLET (haut de la buse, y=0.628) ===
+    // === INLET (haut de la buse) ===
     inlet
     {
         type patch;
         faces
         (
-            (54 57 58 55)   // inlet buse gauche
-            (55 58 59 56)   // inlet buse droite
+            (54 57 58 55)
+            (55 58 59 56)
         );
     }
 
-    // === Atmosphere (top air, y=0.278) ===
+    // === Atmosphere (top air) ===
     atmosphere
     {
         type patch;
         faces
         (
-            (43 49 50 44)   // top air gauche
-            (45 51 52 46)   // top air droite
-            (42 48 49 43)   // top air extrême gauche
-            (46 52 53 47)   // top air extrême droite
+            (43 49 50 44)
+            (45 51 52 46)
+            (42 48 49 43)
+            (46 52 53 47)
         );
     }
 
-    // === Outlet GAUCHE (x=-0.8) ===
+    // === Outlet GAUCHE ===
     outlet_left
     {
         type patch;
         faces
         (
-            (14 28 35 21)   // outlet gap gauche
-            (28 42 48 35)   // outlet air haut gauche
+            (14 28 35 21)
+            (28 42 48 35)
         );
     }
 
-    // === Outlet DROITE (x=0.8) ===
+    // === Outlet DROITE ===
     outlet_right
     {
         type patch;
         faces
         (
-            (20 34 41 27)   // outlet gap droite
-            (34 47 53 41)   // outlet air haut droite
+            (20 34 41 27)
+            (34 47 53 41)
         );
     }
 );

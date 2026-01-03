@@ -14,21 +14,23 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+// ============================================================================
+// INCLUSION DU FICHIER CENTRAL DE PARAMETRES
+// ============================================================================
+#include "../system/parameters"
+
 // Ink (water) phase properties
-// Non-Newtonian Carreau rheology configured in constant/momentumTransport.water
-// Source: PARAMETERS_AgCl.md → Fluid Properties: Ink
+// Non-Newtonian Bird-Carreau rheology configured in momentumTransport.water
 
 // Viscosity model: MUST be 'constant' for incompressibleVoF
-// The zero-shear viscosity (nu0) is provided here as kinematic viscosity
-// BirdCarreau model in momentumTransport.water applies strain-rate dependency
+// Le modele BirdCarreau dans momentumTransport.water gere la dependance au cisaillement
 viscosityModel  constant;
 
-// Zero-shear kinematic viscosity: nu0 = η₀ / ρ = 1.5 / 3000 = 5e-4 m²/s
-// This value is used as the base viscosity for the BirdCarreau model
-nu              5e-4;
+// Zero-shear kinematic viscosity: nu0 = η₀ / ρ_ink
+nu              $nu_0;
 
 // Density
-rho             3000;
+rho             $rho_ink;
 
 
 // ************************************************************************* //

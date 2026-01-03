@@ -19,6 +19,9 @@ IMPORTANT: L'inlet injecte de l'AIR (alpha=0) pour POUSSER l'encre vers le bas!
 import sys
 from pathlib import Path
 
+# Import centralized parameters reader
+from openfoam_params import read_parameters, get_contact_angles
+
 def read_cell_zone_labels(case_dir, zone_name):
     """Read cell labels for a specific zone from cellZones file."""
     cellzones_file = Path(case_dir) / "constant" / "polyMesh" / "cellZones"
@@ -74,10 +77,24 @@ def get_num_cells(case_dir):
 
     raise ValueError("Could not find number of faces in owner file")
 
-def generate_alpha_field(case_dir, output_file):
-    """Generate alpha.water field file with buse filled with ink"""
+def generate_alpha_field(case_dir, output_file, ca_override=None):
+    """Generate alpha.water field file with buse filled with ink
+
+    Args:
+        case_dir: Path to case directory
+        output_file: Output file path
+        ca_override: Dict to override contact angles (for parametric studies)
+    """
 
     mesh_dir = Path(case_dir) / "constant" / "polyMesh"
+
+    # Read contact angles from centralized parameters
+    of_params = read_parameters(Path(case_dir))
+    ca = get_contact_angles(of_params)
+
+    # Apply overrides if provided (for parametric studies)
+    if ca_override:
+        ca.update(ca_override)
 
     print("Reading mesh info...")
 
@@ -133,7 +150,8 @@ def generate_alpha_field(case_dir, output_file):
     # Write OpenFOAM field file
     print(f"Writing {output_file}...")
 
-    header = """/*--------------------------------*- C++ -*----------------------------------*\\
+    # Create header with contact angle values from parameters
+    header = f"""/*--------------------------------*- C++ -*----------------------------------*\\
   =========                 |
   \\\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\\\    /   O peration     | Website:  https://openfoam.org
@@ -141,12 +159,12 @@ def generate_alpha_field(case_dir, output_file):
      \\\\/     M anipulation  |
 \\*---------------------------------------------------------------------------*/
 FoamFile
-{
+{{
     format      ascii;
     class       volScalarField;
     location    "0";
     object      alpha.water;
-}
+}}
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 // GEOMETRIE 2D COMPLETE (sans symetrie)
@@ -158,11 +176,16 @@ FoamFile
 //
 // IMPORTANT: L'inlet injecte de l'AIR (alpha=0) pour pousser l'encre!
 //
-// Angles de contact:
-//   - substrate (or): 35 deg - hydrophile
-//   - wall_isolant_left/right: 90 deg - neutre
-//   - top_isolant_left/right: 60 deg - legerement hydrophile
-//   - wall_buse_left/right: 90 deg - neutre
+// Angles de contact (lus depuis system/parameters):
+//   - CA_substrate: {ca['CA_substrate']} deg
+//   - CA_wall_isolant_left: {ca['CA_wall_isolant_left']} deg
+//   - CA_wall_isolant_right: {ca['CA_wall_isolant_right']} deg
+//   - CA_top_isolant_left: {ca['CA_top_isolant_left']} deg
+//   - CA_top_isolant_right: {ca['CA_top_isolant_right']} deg
+//   - CA_buse_int_left: {ca['CA_buse_int_left']} deg
+//   - CA_buse_int_right: {ca['CA_buse_int_right']} deg
+//   - CA_buse_ext_left: {ca['CA_buse_ext_left']} deg
+//   - CA_buse_ext_right: {ca['CA_buse_ext_right']} deg
 
 dimensions      [];
 
@@ -183,131 +206,132 @@ dimensions      [];
         f.write(")\n;\n\n")
 
         # Boundary field - GEOMETRY 2D COMPLETE avec patches gauche/droite separes
-        f.write("""boundaryField
-{
+        # Contact angles are read from system/parameters
+        f.write(f"""boundaryField
+{{
     // === Faces 2D (empty) ===
     front
-    {
+    {{
         type            empty;
-    }
+    }}
 
     back
-    {
+    {{
         type            empty;
-    }
+    }}
 
-    // === Substrat (fond du puit) - Or, hydrophile 35 deg ===
+    // === Substrat (fond du puit) ===
     substrate
-    {
+    {{
         type            contactAngle;
-        theta0          35;
+        theta0          {ca['CA_substrate']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
-    // === Paroi verticale de l'isolant GAUCHE - hydrophile 15 deg ===
+    // === Paroi verticale de l'isolant GAUCHE ===
     wall_isolant_left
-    {
+    {{
         type            contactAngle;
-        theta0          15;
+        theta0          {ca['CA_wall_isolant_left']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
-    // === Paroi verticale de l'isolant DROITE - hydrophobe 160 deg ===
+    // === Paroi verticale de l'isolant DROITE ===
     wall_isolant_right
-    {
+    {{
         type            contactAngle;
-        theta0          160;
+        theta0          {ca['CA_wall_isolant_right']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
-    // === Surface horizontale de l'isolant GAUCHE - hydrophile 15 deg ===
+    // === Surface horizontale de l'isolant GAUCHE ===
     top_isolant_left
-    {
+    {{
         type            contactAngle;
-        theta0          15;
+        theta0          {ca['CA_top_isolant_left']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
-    // === Surface horizontale de l'isolant DROITE - hydrophobe 160 deg ===
+    // === Surface horizontale de l'isolant DROITE ===
     top_isolant_right
-    {
+    {{
         type            contactAngle;
-        theta0          160;
+        theta0          {ca['CA_top_isolant_right']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
-    // === Paroi INTERIEURE de la buse GAUCHE - neutre 90 deg ===
+    // === Paroi INTERIEURE de la buse GAUCHE ===
     wall_buse_left_int
-    {
+    {{
         type            contactAngle;
-        theta0          90;
+        theta0          {ca['CA_buse_int_left']};
         limit           gradient;
         value           uniform 1;
-    }
+    }}
 
-    // === Paroi EXTERIEURE de la buse GAUCHE - hydrophobe 180 deg ===
+    // === Paroi EXTERIEURE de la buse GAUCHE ===
     wall_buse_left_ext
-    {
+    {{
         type            contactAngle;
-        theta0          180;
+        theta0          {ca['CA_buse_ext_left']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
-    // === Paroi INTERIEURE de la buse DROITE - neutre 90 deg ===
+    // === Paroi INTERIEURE de la buse DROITE ===
     wall_buse_right_int
-    {
+    {{
         type            contactAngle;
-        theta0          90;
+        theta0          {ca['CA_buse_int_right']};
         limit           gradient;
         value           uniform 1;
-    }
+    }}
 
-    // === Paroi EXTERIEURE de la buse DROITE - hydrophobe 180 deg ===
+    // === Paroi EXTERIEURE de la buse DROITE ===
     wall_buse_right_ext
-    {
+    {{
         type            contactAngle;
-        theta0          180;
+        theta0          {ca['CA_buse_ext_right']};
         limit           gradient;
         value           uniform 0;
-    }
+    }}
 
     // === Inlet (haut de la buse) - AIR qui pousse l'encre ===
     inlet
-    {
+    {{
         type            fixedValue;
         value           uniform 0;  // AIR (pas encre!) pour pousser l'encre vers le bas
-    }
+    }}
 
     // === Atmosphere (sortie air) ===
     atmosphere
-    {
+    {{
         type            inletOutlet;
         inletValue      uniform 0;  // Air pur si reflux
         value           uniform 0;
-    }
+    }}
 
     // === Outlet lateral GAUCHE ===
     outlet_left
-    {
+    {{
         type            inletOutlet;
         inletValue      uniform 0;
         value           uniform 0;
-    }
+    }}
 
     // === Outlet lateral DROITE ===
     outlet_right
-    {
+    {{
         type            inletOutlet;
         inletValue      uniform 0;
         value           uniform 0;
-    }
-}
+    }}
+}}
 
 // ************************************************************************* //
 """)
