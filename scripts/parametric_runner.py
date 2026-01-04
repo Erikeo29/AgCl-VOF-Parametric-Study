@@ -166,18 +166,29 @@ class ParameterModifier:
         print(f"  ✓ sigma = {value} N/m")
     
     def _modify_control_dict(self, param: str, value):
-        """Modifie system/controlDict."""
-        file_path = self.case_dir / "system" / "controlDict"
-        if not file_path.exists():
-            return
-        
-        content = file_path.read_text()
+        """Modifie les parametres numeriques dans system/parameters.
+
+        NOTE: controlDict utilise #include "parameters" et des variables
+        comme $endTime, $writeInterval, etc. On modifie donc parameters.
+        """
         import re
-        pattern = rf'({param}\s+)[^;]+(;)'
-        replacement = rf'\g<1>{value}\2'
-        new_content = re.sub(pattern, replacement, content)
-        file_path.write_text(new_content)
-        print(f"  ✓ {param} = {value} dans controlDict")
+
+        params_file = self.case_dir / "system" / "parameters"
+        if not params_file.exists():
+            print(f"  ⚠ system/parameters non trouvé")
+            return
+
+        content = params_file.read_text()
+
+        # Modifier le parametre dans parameters
+        pattern = rf'^({param}\s+)([\d.eE+-]+)(\s*;)'
+        new_content = re.sub(pattern, rf'\g<1>{value}\3', content, flags=re.MULTILINE)
+
+        if new_content != content:
+            params_file.write_text(new_content)
+            print(f"  ✓ {param} = {value} dans parameters")
+        else:
+            print(f"  ⚠ {param} non trouvé dans parameters")
     
     def _modify_process(self, param: str, value):
         """Modifie les paramètres de processus dans system/parameters.
