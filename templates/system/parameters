@@ -158,7 +158,25 @@ CA_buse_ext_left        180;    // [deg] Angle buse exterieur gauche (parfaiteme
 CA_buse_ext_right       180;    // [deg] Angle buse exterieur droite
 
 // ============================================================================
-// 6. PARAMETRES NUMERIQUES
+// 6. PARAMETRES DISPENSE (ejection encre)
+// ============================================================================
+
+// --- Temps de dispense ---
+// C'est le temps pour vider la buse (ejection en mode temps-pression)
+// La vitesse est calculee automatiquement: v = y_ink / dispense_time
+dispense_time       0.040;      // [s] Temps de dispense (40 ms)
+
+// --- Vitesse d'ejection calculee ---
+// dispense_velocity = y_ink [mm] / dispense_time [s] * 1e-3 [m/mm]
+// Exemple: 0.440mm / 0.040s = 11 mm/s = 0.011 m/s
+dispense_velocity   0.011;      // [m/s] Vitesse inlet (calculee)
+
+// --- Fin dispense + marge ---
+// dispense_end = dispense_time (arret injection a la fin du dispense)
+dispense_end        0.040;      // [s] Temps arret injection
+
+// ============================================================================
+// 7. PARAMETRES NUMERIQUES
 // ============================================================================
 
 // --- Temps ---
@@ -172,7 +190,7 @@ maxAlphaCo      0.3;        // [-] Nombre de Courant interface max
 maxDeltaT       1e-3;       // [s] Pas de temps maximum
 
 // ============================================================================
-// 7. VERIFICATION COHERENCE (valeurs calculees pour reference)
+// 8. VERIFICATION COHERENCE (valeurs calculees pour reference)
 // ============================================================================
 
 // Surface puit [mm²]

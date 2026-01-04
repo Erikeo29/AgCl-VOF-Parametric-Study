@@ -141,6 +141,11 @@ def get_default_parameters() -> dict:
         'CA_buse_ext_left': 180,
         'CA_buse_ext_right': 180,
 
+        # Dispense
+        'dispense_time': 0.040,      # s (40 ms)
+        'dispense_velocity': 0.011,  # m/s
+        'dispense_end': 0.040,       # s
+
         # Numerical
         'endTime': 0.1,         # s
         'writeInterval': 0.002, # s
