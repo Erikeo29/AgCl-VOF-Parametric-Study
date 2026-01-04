@@ -337,6 +337,16 @@ class ParameterModifier:
                 print(f"  ✓ y_buse = {value} mm → y_buse_top = {y_buse_top:.3f} mm, y_ink = {value} mm")
             else:
                 print(f"  ✓ y_buse = {value} mm (y_buse_bottom non trouvé, dérivées non calculées)")
+        elif param == 'x_gap_buse':
+            # Mettre à jour x_gap_buse_m aussi
+            x_gap_buse_m = value * 0.001  # mm to m
+            new_content = re.sub(
+                r'^(x_gap_buse_m\s+)([\d.eE+-]+)(\s*;)',
+                rf'\g<1>{x_gap_buse_m:.6f}\3',
+                new_content,
+                flags=re.MULTILINE
+            )
+            print(f"  ✓ x_gap_buse = {value} mm → x_gap_buse_m = {x_gap_buse_m:.6f} m")
         else:
             print(f"  ✓ {param} = {value} dans parameters")
 

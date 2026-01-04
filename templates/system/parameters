@@ -114,13 +114,13 @@ rho_ink         3000;       // [kg/m³] Densite encre AgCl
 // NOTE: Valeurs calibrees pour produire de l'overflow (cf. GUI_RUN de reference)
 //
 eta_0           1.0;        // [Pa.s] Viscosite zero-shear (repos)
-eta_inf         0.001;      // [Pa.s] Viscosite infinite-shear (tres faible!)
+eta_inf         0.1;        // [Pa.s] Viscosite infinite-shear (augmentee pour stabilite)
 k_carreau       0.1;        // [s] Temps de relaxation (constante k)
 n_carreau       0.5;        // [-] Exposant loi puissance (n < 1 = shear-thinning)
 
 // --- Viscosites cinematiques (nu = eta/rho) ---
 nu_0            3.333e-4;   // [m²/s] = eta_0 / rho_ink = 1.0 / 3000
-nu_inf          3.333e-7;   // [m²/s] = eta_inf / rho_ink = 0.001 / 3000
+nu_inf          3.333e-5;   // [m²/s] = eta_inf / rho_ink = 0.1 / 3000
 
 // --- Tension de surface ---
 sigma           0.040;      // [N/m] = 40 mN/m
@@ -150,8 +150,8 @@ CA_top_isolant_left     15;     // [deg] Angle surface isolant gauche (hydrophil
 CA_top_isolant_right    120;    // [deg] Angle surface isolant droite
 
 // --- Parois buse interieures (contact avec encre) ---
-CA_buse_int_left        90;     // [deg] Angle buse interieur gauche
-CA_buse_int_right       90;     // [deg] Angle buse interieur droite
+CA_buse_int_left        120;    // [deg] Angle buse interieur gauche (hydrophobe)
+CA_buse_int_right       120;    // [deg] Angle buse interieur droite (hydrophobe)
 
 // --- Parois buse exterieures (contact avec air) ---
 CA_buse_ext_left        180;    // [deg] Angle buse exterieur gauche (parfaitement hydrophobe)
@@ -162,7 +162,7 @@ CA_buse_ext_right       180;    // [deg] Angle buse exterieur droite
 // ============================================================================
 
 // --- Temps ---
-endTime         0.2;        // [s] Temps final de simulation (200 ms)
+endTime         0.1;        // [s] Temps final de simulation (100 ms)
 writeInterval   0.002;      // [s] Intervalle d'ecriture (2 ms)
 deltaT          1e-6;       // [s] Pas de temps initial
 

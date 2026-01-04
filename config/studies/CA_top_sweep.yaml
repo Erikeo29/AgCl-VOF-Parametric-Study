@@ -1,0 +1,28 @@
+# Sweep CA_top_isolant_left = 10, 20, 30
+# Autres parametres fixes
+# Date: 2026-01-04
+
+name: CA_top_sweep
+description: "Effet CA plateau gauche (10/20/30) sur overflow"
+
+sweep_type: grid
+
+sweep:
+  parameters:
+    - name: geometry.x_gap_buse
+      values: [-0.075]
+
+    - name: geometry.ratio_surface
+      values: [0.8]
+
+    - name: rheology.eta0
+      values: [0.5]
+
+    - name: contact_angles.wall_isolant_left
+      values: [30]
+
+    - name: contact_angles.top_isolant_left
+      values: [10, 20, 30]
+
+execution:
+  timeout: 7200
