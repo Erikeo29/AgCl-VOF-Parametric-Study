@@ -1,0 +1,37 @@
+# Sweep dispense_time = 20, 40, 60, 80, 100 ms
+# Etude de l'effet du temps d'ejection sur l'etalement
+# Date: 2026-01-04
+
+name: dispense_time_sweep
+description: "Effet du temps de dispense (20-100ms) sur etalement"
+
+sweep_type: grid
+
+sweep:
+  parameters:
+    # Temps de dispense (en secondes)
+    - name: process.dispense_time
+      values: [0.020, 0.040, 0.060, 0.080, 0.100]
+
+    # Parametres fixes (memes que CA_top_sweep)
+    - name: geometry.x_gap_buse
+      values: [-0.075]
+
+    - name: geometry.ratio_surface
+      values: [0.8]
+
+    - name: rheology.eta0
+      values: [0.5]
+
+    - name: contact_angles.wall_isolant_left
+      values: [30]
+
+    - name: contact_angles.top_isolant_left
+      values: [20]
+
+    # Temps simulation augmente pour cas 100ms
+    - name: numerical.endTime
+      values: [0.130]
+
+execution:
+  timeout: 7200
