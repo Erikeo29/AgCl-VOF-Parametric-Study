@@ -1,0 +1,38 @@
+# Test buse décalée vers la gauche (x_gap_buse = -0.075mm)
+# Date: 2025-01-03
+#
+# 8 combinaisons pour valider l'effet du décalage sur l'overflow
+# Buse décalée de -75µm vers la gauche
+# ratio_surface = 0.8, endTime = 100ms
+
+name: offset_buse_test
+description: "Test overflow avec buse décalée x=-0.075mm, ratio=0.8"
+
+# Mode grille
+sweep_type: grid
+
+sweep:
+  parameters:
+    # Décalage buse fixe
+    - name: geometry.x_gap_buse
+      values: [-0.075]  # mm, décalé vers la gauche
+
+    # Ratio surface buse/puit fixe
+    - name: geometry.ratio_surface
+      values: [0.8]
+
+    # Viscosité zero-shear
+    - name: rheology.eta0
+      values: [0.5, 1.5]
+
+    # Angle paroi verticale gauche
+    - name: contact_angles.wall_isolant_left
+      values: [30, 60]
+
+    # Angle plateau gauche
+    - name: contact_angles.top_isolant_left
+      values: [30, 60]
+
+# Configuration exécution
+execution:
+  timeout: 7200
