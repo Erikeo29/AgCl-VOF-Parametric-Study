@@ -14,10 +14,12 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+#include "../system/parameters"
+
 // GÉOMÉTRIE 2D COMPLÈTE (sans symétrie)
 // Pour permettre des angles de contact différents gauche/droite
-// Inlet à y=0.558mm, injection vers le bas (-y)
-// Vitesse: 6.83 mm/s pendant 80ms puis stop
+// Inlet: injection vers le bas (-y)
+// Vitesse et temps de dispense definis dans parameters
 
 dimensions      [0 1 -1 0 0 0 0];
 
@@ -91,15 +93,16 @@ boundaryField
     }
 
     // === Inlet (haut de la buse, injection encre vers le bas) ===
+    // Vitesse et temps definis dans system/parameters
     inlet
     {
         type            uniformFixedValue;
         uniformValue    table
         (
-            (0.000    (0 -0.00683 0))   // 6.83 mm/s vers le bas
-            (0.080    (0 -0.00683 0))   // fin dispense à 80 ms
-            (0.0801   (0 0 0))          // arrêt brutal
-            (0.300    (0 0 0))          // reste à 0 jusqu'à 300ms
+            (0.000                                      (0 #calc "-$dispense_velocity" 0))
+            ($dispense_end                              (0 #calc "-$dispense_velocity" 0))
+            (#calc "$dispense_end + 0.0001"             (0 0 0))
+            ($endTime                                   (0 0 0))
         );
     }
 

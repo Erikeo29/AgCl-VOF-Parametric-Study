@@ -195,7 +195,7 @@ def create_annotation_text(params: dict, time_ms: float) -> dict:
     return {
         'top_left': [
             f"temps: {time_ms:.1f} ms",
-            f"time dispense={params.get('endTime', 0.1)*1000:.0f} ms",
+            f"dispense time={params.get('dispense_time', 0.040)*1000:.0f} ms",
             f"density={params.get('rho_ink', 3000):.0f} kg/m3",
             f"viscosity={params.get('eta_0', 0.5):.1f} Pa.s",
             f"surface tension={params.get('sigma', 0.04)*1000:.0f} mN/m",

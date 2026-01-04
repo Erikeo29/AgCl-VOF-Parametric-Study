@@ -180,12 +180,64 @@ class ParameterModifier:
         print(f"  ✓ {param} = {value} dans controlDict")
     
     def _modify_process(self, param: str, value):
-        """Modifie les paramètres de processus."""
+        """Modifie les paramètres de processus dans system/parameters.
+
+        Pour dispense_time:
+        - dispense_time [s]: temps pour vider la buse
+        - dispense_velocity [m/s] = y_ink [mm] * 1e-3 / dispense_time [s]
+        - dispense_end [s] = dispense_time
+        """
+        import re
+
         if param == 'end_time':
             self._modify_control_dict('endTime', value)
-        elif param == 'dispense_time':
-            # Modifier setFieldsDict ou autre selon implémentation
-            print(f"  ⚠ dispense_time: modification manuelle requise")
+            return
+
+        if param == 'dispense_time':
+            params_file = self.case_dir / "system" / "parameters"
+            if not params_file.exists():
+                print(f"  ⚠ system/parameters non trouvé")
+                return
+
+            content = params_file.read_text()
+
+            # Lire y_ink depuis le fichier
+            match = re.search(r'^y_ink\s+([\d.eE+-]+)\s*;', content, re.MULTILINE)
+            if not match:
+                print(f"  ⚠ y_ink non trouvé dans parameters")
+                return
+
+            y_ink = float(match.group(1))  # en mm
+
+            # Calculer la vitesse: v = y_ink [mm] * 1e-3 / dispense_time [s]
+            dispense_velocity = y_ink * 0.001 / value  # m/s
+
+            # Mettre à jour dispense_time
+            new_content = re.sub(
+                r'^(dispense_time\s+)([\d.eE+-]+)(\s*;)',
+                rf'\g<1>{value}\3',
+                content,
+                flags=re.MULTILINE
+            )
+
+            # Mettre à jour dispense_velocity
+            new_content = re.sub(
+                r'^(dispense_velocity\s+)([\d.eE+-]+)(\s*;)',
+                rf'\g<1>{dispense_velocity:.6f}\3',
+                new_content,
+                flags=re.MULTILINE
+            )
+
+            # Mettre à jour dispense_end = dispense_time
+            new_content = re.sub(
+                r'^(dispense_end\s+)([\d.eE+-]+)(\s*;)',
+                rf'\g<1>{value}\3',
+                new_content,
+                flags=re.MULTILINE
+            )
+
+            params_file.write_text(new_content)
+            print(f"  ✓ dispense_time = {value*1000:.0f} ms → velocity = {dispense_velocity*1000:.2f} mm/s (y_ink = {y_ink} mm)")
 
     def _modify_geometry(self, param: str, value):
         """Modifie les paramètres géométriques dans system/parameters.
