@@ -1,0 +1,38 @@
+# Sweep dispense_time avec ratio_surface = 1.0 (100%)
+# Pour avoir assez de volume pour l'overflow
+# Date: 2026-01-05
+
+name: dispense_time_ratio1
+description: "Dispense time (20/40/80ms) avec ratio=1.0 pour overflow"
+
+sweep_type: grid
+
+sweep:
+  parameters:
+    # Temps de dispense (en secondes)
+    - name: process.dispense_time
+      values: [0.020, 0.040, 0.080]
+
+    # Volume 100% pour avoir overflow
+    - name: geometry.ratio_surface
+      values: [1.0]
+
+    # Parametres fixes
+    - name: geometry.x_gap_buse
+      values: [-0.075]
+
+    - name: rheology.eta0
+      values: [0.5]
+
+    - name: contact_angles.wall_isolant_left
+      values: [30]
+
+    - name: contact_angles.top_isolant_left
+      values: [20]
+
+    # Temps simulation 130ms
+    - name: numerical.endTime
+      values: [0.130]
+
+execution:
+  timeout: 7200
