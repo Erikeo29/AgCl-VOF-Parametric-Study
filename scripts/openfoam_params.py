@@ -47,7 +47,7 @@ def read_parameters(case_dir: Path = None) -> dict:
 
     params = {}
 
-    with open(params_file, 'r') as f:
+    with open(params_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
     # Parse OpenFOAM dictionary format: "key value;"
